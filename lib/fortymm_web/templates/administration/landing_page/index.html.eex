@@ -1,1 +1,3 @@
 <header id="administration-header">Administration</header>
+
+<%= link "Leagues", to: Routes.administration_leagues_path(@conn, :index) %>
