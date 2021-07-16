@@ -5,6 +5,18 @@ defmodule Fortymm.Administration.LeaguesControllerTest do
 
   describe "show" do
     @header_selector "#league-administration-header"
+    @upload_data_selector "a#upload_data"
+
+    test "links to the data upload page for the league", %{conn: conn} do
+      league = Factory.insert(:league)
+
+      assert [Routes.administration_upload_league_data_path(conn, :index, league.id)] ==
+               conn
+               |> get(Routes.administration_leagues_path(conn, :show, league.id))
+               |> html_response(200)
+               |> Floki.find(@upload_data_selector)
+               |> Floki.attribute("href")
+    end
 
     test "renders the header", %{conn: conn} do
       league = Factory.insert(:league)

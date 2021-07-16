@@ -22,6 +22,7 @@ defmodule FortymmWeb.Router do
     scope "/administration", Administration, as: :administration do
       get "/", LandingPageController, :index
       resources "/leagues", LeaguesController, only: [:index, :show]
+      live "/leagues/:id/upload-data", UploadLeagueDataLive, :index
     end
   end
 
