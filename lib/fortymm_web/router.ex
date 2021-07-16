@@ -21,6 +21,7 @@ defmodule FortymmWeb.Router do
 
     scope "/administration", Administration, as: :administration do
       get "/", LandingPageController, :index
+      get "/leagues", LeaguesController, :index
     end
   end
 

@@ -12,4 +12,13 @@ defmodule FortymmWeb.AdministrationControllerTest do
              |> Floki.text()
              |> String.trim()
   end
+
+  test "links to the league administration page", %{conn: conn} do
+    assert [Routes.administration_leagues_path(conn, :index)] ==
+             conn
+             |> get(Routes.administration_landing_page_path(conn, :index))
+             |> html_response(200)
+             |> Floki.find("a:fl-contains('Leagues')")
+             |> Floki.attribute("href")
+  end
 end

@@ -1,0 +1,28 @@
+<header id="league-administration-header">Administration - Leagues</header>
+
+<%= if @leagues == [] do %>
+  <div class="no-leagues-found">No Leagues Found</div>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Slug</th>
+        <th>Inserted At</th>
+        <th>Updated At</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for league <- @leagues do %>
+          <tr>
+            <td class="league-id"><%= league.id %></td>
+            <td class="league-name"><%= league.name %></td>
+            <td class="league-slug"><%= league.slug %></td>
+            <td class="league-inserted-at"><%= league.inserted_at %></td>
+            <td class="league-updated-at"><%= league.updated_at %></td>
+          </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
