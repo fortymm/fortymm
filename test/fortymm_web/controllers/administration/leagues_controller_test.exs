@@ -3,6 +3,22 @@ defmodule Fortymm.Administration.LeaguesControllerTest do
 
   alias Fortymm.Factory
 
+  describe "show" do
+    @header_selector "#league-administration-header"
+
+    test "renders the header", %{conn: conn} do
+      league = Factory.insert(:league)
+
+      assert "Administration > Leagues > #{league.name}" ==
+               conn
+               |> get(Routes.administration_leagues_path(conn, :show, league.id))
+               |> html_response(200)
+               |> Floki.find(@header_selector)
+               |> Floki.text()
+               |> String.trim()
+    end
+  end
+
   describe "index" do
     @header_selector "#league-administration-header"
     @league_id_selector ".league-id"
@@ -11,15 +27,27 @@ defmodule Fortymm.Administration.LeaguesControllerTest do
     @league_inserted_at_selector ".league-inserted-at"
     @league_updated_at_selector ".league-updated-at"
     @empty_state_selector ".no-leagues-found"
+    @details_link_selector "a.league-details"
 
     test "renders the header", %{conn: conn} do
-      assert "Administration - Leagues" ==
+      assert "Administration > Leagues" ==
                conn
                |> get(Routes.administration_leagues_path(conn, :index))
                |> html_response(200)
                |> Floki.find(@header_selector)
                |> Floki.text()
                |> String.trim()
+    end
+
+    test "links to the leauge details page", %{conn: conn} do
+      league = Factory.insert(:league)
+
+      assert [Routes.administration_leagues_path(conn, :show, league.id)] ==
+               conn
+               |> get(Routes.administration_leagues_path(conn, :index))
+               |> html_response(200)
+               |> Floki.find(@details_link_selector)
+               |> Floki.attribute("href")
     end
 
     test "shows an empty state when there are no leagues", %{conn: conn} do
