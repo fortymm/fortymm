@@ -18,6 +18,10 @@ defmodule FortymmWeb.Router do
     pipe_through :browser
 
     live "/", PageLive, :index
+
+    scope "/administration", Administration, as: :administration do
+      get "/", LandingPageController, :index
+    end
   end
 
   # Other scopes may use custom stacks.
