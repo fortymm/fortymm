@@ -1,4 +1,4 @@
-<header id="league-administration-header">Administration - Leagues</header>
+<header id="league-administration-header">Administration > Leagues</header>
 
 <%= if @leagues == [] do %>
   <div class="no-leagues-found">No Leagues Found</div>
@@ -11,6 +11,7 @@
         <th>Slug</th>
         <th>Inserted At</th>
         <th>Updated At</th>
+        <th />
       </tr>
     </thead>
     <tbody>
@@ -21,6 +22,9 @@
             <td class="league-slug"><%= league.slug %></td>
             <td class="league-inserted-at"><%= league.inserted_at %></td>
             <td class="league-updated-at"><%= league.updated_at %></td>
+            <td>
+              <%= link "Details", to: Routes.administration_leagues_path(@conn, :show, league.id), class: "league-details" %>
+            </td>
           </tr>
       <% end %>
     </tbody>
