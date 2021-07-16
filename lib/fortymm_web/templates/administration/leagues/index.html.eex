@@ -23,7 +23,7 @@
             <td class="league-inserted-at"><%= league.inserted_at %></td>
             <td class="league-updated-at"><%= league.updated_at %></td>
             <td>
-              <%= link "Details", to: Routes.administration_leagues_path(@conn, :show, league.id), class: "league-details" %>
+              <%= link "Details", to: Routes.administration_leagues_path(@conn, :show, league), class: "league-details" %>
             </td>
           </tr>
       <% end %>

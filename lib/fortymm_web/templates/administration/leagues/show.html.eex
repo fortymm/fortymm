@@ -1,3 +1,5 @@
 <header id="league-administration-header">
     Administration > <%= link "Leagues", to: Routes.administration_leagues_path(@conn, :index) %> > <%= @league.name %>
 </header>
+
+<%= link "Upload Data", to: Routes.administration_upload_league_data_path(@conn, :index, @league.id), id: "upload_data" %>
