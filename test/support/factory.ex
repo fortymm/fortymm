@@ -14,4 +14,28 @@ defmodule Fortymm.Factory do
       slug: sequence(:league_slug, &"league-slug-#{&1}")
     }
   end
+
+  def league_membership_factory do
+    %Fortymm.LeagueMemberships.LeagueMembership{
+      player_id: nil,
+      league_id: nil,
+      external_league_ref:
+        sequence(
+          :league_membership_external_league_ref,
+          &"league-membership-external-league-ref-#{&1}"
+        )
+    }
+  end
+
+  def with_player(model, attrs \\ %{}) do
+    player = insert(:player, attrs)
+
+    Enum.into(%{player_id: player.id}, model)
+  end
+
+  def with_league(model, attrs \\ %{}) do
+    league = insert(:league, attrs)
+
+    Enum.into(%{league_id: league.id}, model)
+  end
 end
