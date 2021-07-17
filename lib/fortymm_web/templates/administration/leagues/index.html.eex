@@ -1,4 +1,6 @@
-<header id="league-administration-header">Administration > Leagues</header>
+<header id="league-administration-header">
+  <%= link "Administration", to: Routes.administration_landing_page_path(@conn, :index) %> > Leagues
+</header>
 
 <%= if @leagues == [] do %>
   <div class="no-leagues-found">No Leagues Found</div>

@@ -1,3 +1,3 @@
 <header id="league-data-upload-header">
-    Administration > <%= link "Leagues", to: Routes.administration_leagues_path(@socket, :index) %> > <%= link @league.name, to: Routes.administration_leagues_path(@socket, :show, @league), class: "league-details" %> > Upload Data
+  <%= link "Administration", to: Routes.administration_landing_page_path(@socket, :index) %> > <%= link "Leagues", to: Routes.administration_leagues_path(@socket, :index) %> > <%= link @league.name, to: Routes.administration_leagues_path(@socket, :show, @league), class: "league-details" %> > Upload Data
 </header>
