@@ -27,6 +27,14 @@ defmodule Fortymm.Factory do
     }
   end
 
+  def league_data_ingestion_factory() do
+    %Fortymm.LeagueDataIngestions.LeagueDataIngestion{
+      status: "pending",
+      started_at: NaiveDateTime.local_now(),
+      completed_at: NaiveDateTime.local_now()
+    }
+  end
+
   def with_player(model, attrs \\ %{}) do
     player = insert(:player, attrs)
 
