@@ -26,7 +26,10 @@ defmodule Fortymm.LeagueDataIngestionsTest do
     end
 
     test "create_league_data_ingestion/1 with valid data creates a league_data_ingestion" do
-      valid_attrs = Factory.params_for(:league_data_ingestion)
+      valid_attrs =
+        :league_data_ingestion
+        |> Factory.params_for()
+        |> Factory.with_league()
 
       assert {:ok, %LeagueDataIngestion{} = league_data_ingestion} =
                LeagueDataIngestions.create_league_data_ingestion(valid_attrs)
@@ -43,7 +46,9 @@ defmodule Fortymm.LeagueDataIngestionsTest do
 
     test "update_league_data_ingestion/2 with valid data updates the league_data_ingestion" do
       update_attrs =
-        Factory.params_for(:league_data_ingestion, status: LeagueDataIngestion.completed())
+        :league_data_ingestion
+        |> Factory.params_for(status: LeagueDataIngestion.completed())
+        |> Factory.with_league()
 
       league_data_ingestion = league_data_ingestion_fixture()
 
