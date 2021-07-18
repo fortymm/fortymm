@@ -3,6 +3,7 @@ defmodule Fortymm.LeagueDataIngestions.LeagueDataIngestion do
   import Ecto.Changeset
 
   alias Fortymm.Leagues.League
+  alias Fortymm.LeagueDataIngestions.IngestionDatum
 
   @pending "pending"
   @in_progress "in-progress"
@@ -19,6 +20,7 @@ defmodule Fortymm.LeagueDataIngestions.LeagueDataIngestion do
     field :started_at, :naive_datetime
     field :status, :string
     belongs_to :league, League
+    has_many :ingestion_data, IngestionDatum
 
     timestamps()
   end
@@ -36,5 +38,6 @@ defmodule Fortymm.LeagueDataIngestions.LeagueDataIngestion do
     |> cast(attrs, [:started_at, :completed_at, :status, :league_id])
     |> validate_required([:status, :league_id])
     |> validate_inclusion(:status, @valid_statuses)
+    |> foreign_key_constraint(:league_id)
   end
 end
