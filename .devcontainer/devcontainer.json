@@ -1,0 +1,34 @@
+{
+  "name": "Fortymm - Phoenix/Elixir",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [
+    4000
+  ],
+  "portsAttributes": {
+    "4000": {
+      "label": "Phoenix Server",
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "jakebecker.elixir-ls",
+        "phoenixframework.phoenix",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        "elixirLS.dialyzerEnabled": true,
+        "elixirLS.fetchDeps": false,
+        "elixirLS.suggestSpecs": true,
+        "editor.formatOnSave": true,
+        "[elixir]": {
+          "editor.defaultFormatter": "JakeBecker.elixir-ls"
+        }
+      }
+    }
+  },
+  "postCreateCommand": "bash -c '. /opt/asdf/asdf.sh && while ! pg_isready -h db -U postgres; do sleep 1; done && mix setup'"
+}
