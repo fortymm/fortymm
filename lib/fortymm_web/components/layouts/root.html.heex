@@ -31,26 +31,54 @@
     </script>
   </head>
   <body>
-    <ul class="menu menu-horizontal w-full relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
-      <%= if @current_scope do %>
-        <li>
-          {@current_scope.user.email}
-        </li>
-        <li>
-          <.link href={~p"/users/settings"}>Settings</.link>
-        </li>
-        <li>
-          <.link href={~p"/users/log-out"} method="delete">Log out</.link>
-        </li>
-      <% else %>
-        <li>
-          <.link href={~p"/users/register"}>Register</.link>
-        </li>
-        <li>
-          <.link href={~p"/users/log-in"}>Log in</.link>
-        </li>
-      <% end %>
-    </ul>
+    <div class="navbar bg-base-200 shadow-sm">
+      <div class="flex-1">
+        <.link href={~p"/"} class="btn btn-ghost text-xl">FortyMM</.link>
+      </div>
+      <div class="flex-none">
+        <ul class="menu menu-horizontal px-1">
+          <%= if @current_scope do %>
+            <li>
+              <div
+                phx-click={JS.toggle(to: "#user-menu")}
+                class="cursor-pointer"
+              >
+                <FortymmWeb.Components.Gravatar.avatar
+                  email={@current_scope.user.email}
+                  size={32}
+                  class="w-5 h-5 rounded-full"
+                  alt={@current_scope.user.username}
+                />
+                {@current_scope.user.username}
+              </div>
+              <ul
+                id="user-menu"
+                phx-click-away={JS.hide(to: "#user-menu")}
+                class="hidden menu dropdown-content bg-base-200 rounded-box w-56 mt-6 z-[1] p-2 shadow absolute right-0"
+              >
+                <li>
+                  <.link href={~p"/users/settings"}>
+                    <.icon name="hero-user-circle" class="size-5" /> Account Settings
+                  </.link>
+                </li>
+                <li>
+                  <.link href={~p"/users/log-out"} method="delete" class="text-error">
+                    <.icon name="hero-arrow-left-on-rectangle" class="size-5" /> Sign Out
+                  </.link>
+                </li>
+              </ul>
+            </li>
+          <% else %>
+            <li>
+              <.link href={~p"/users/register"}>Register</.link>
+            </li>
+            <li>
+              <.link href={~p"/users/log-in"}>Log in</.link>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
     {@inner_content}
   </body>
 </html>
