@@ -7,6 +7,19 @@
 # General application configuration
 import Config
 
+config :fortymm, :scopes,
+  user: [
+    default: true,
+    module: Fortymm.Accounts.Scope,
+    assign_key: :current_scope,
+    access_path: [:user, :id],
+    schema_key: :user_id,
+    schema_type: :id,
+    schema_table: :users,
+    test_data_fixture: Fortymm.AccountsFixtures,
+    test_setup_helper: :register_and_log_in_user
+  ]
+
 config :fortymm,
   ecto_repos: [Fortymm.Repo],
   generators: [timestamp_type: :utc_datetime]
