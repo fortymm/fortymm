@@ -58,7 +58,52 @@ defmodule FortymmWeb.UserLive.RegistrationTest do
       result =
         lv
         |> form("#registration_form",
-          user: %{"email" => user.email}
+          user: %{"email" => user.email, "username" => unique_user_username()}
+        )
+        |> render_submit()
+
+      assert result =~ "has already been taken"
+    end
+
+    test "renders errors for duplicated username", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/register")
+
+      user = user_fixture(%{username: "testuser"})
+
+      result =
+        lv
+        |> form("#registration_form",
+          user: %{"email" => unique_user_email(), "username" => user.username}
+        )
+        |> render_submit()
+
+      assert result =~ "has already been taken"
+    end
+
+    test "renders errors for duplicated username with different casing", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/register")
+
+      _user = user_fixture(%{username: "testuser"})
+
+      result =
+        lv
+        |> form("#registration_form",
+          user: %{"email" => unique_user_email(), "username" => "TestUser"}
+        )
+        |> render_submit()
+
+      assert result =~ "has already been taken"
+    end
+
+    test "renders errors when existing username differs only in casing", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/register")
+
+      _user = user_fixture(%{username: "TestUser"})
+
+      result =
+        lv
+        |> form("#registration_form",
+          user: %{"email" => unique_user_email(), "username" => "testuser"}
         )
         |> render_submit()
 

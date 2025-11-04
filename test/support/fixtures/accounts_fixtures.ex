@@ -10,11 +10,22 @@ defmodule Fortymm.AccountsFixtures do
   alias Fortymm.Accounts.Scope
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
+
+  def unique_user_username do
+    # Generate a unique username that meets the requirements:
+    # - 3-20 characters
+    # - Only lowercase letters, numbers, underscores, periods
+    # - Cannot start/end with underscore or period
+    # - No consecutive separators
+    "user#{abs(System.unique_integer([:positive])) |> rem(1_000_000)}"
+  end
+
   def valid_user_password, do: "hello world!"
 
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
-      email: unique_user_email()
+      email: unique_user_email(),
+      username: unique_user_username()
     })
   end
 

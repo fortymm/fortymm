@@ -8,6 +8,7 @@ defmodule Fortymm.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
+    field :username, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -51,6 +52,83 @@ defmodule Fortymm.Accounts.User do
   defp validate_email_changed(changeset) do
     if get_field(changeset, :email) && get_change(changeset, :email) == nil do
       add_error(changeset, :email, "did not change")
+    else
+      changeset
+    end
+  end
+
+  @doc """
+  A user changeset for registration.
+
+  It validates email and username.
+  """
+  def registration_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :username])
+    |> validate_email(opts)
+    |> validate_username(opts)
+  end
+
+  @doc """
+  A user changeset for changing the username.
+
+  It requires the username to change otherwise an error is added.
+
+  ## Options
+
+    * `:validate_unique` - Set to false if you don't want to validate the
+      uniqueness of the username, useful when displaying live validations.
+      Defaults to `true`.
+  """
+  def username_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:username])
+    |> validate_username(opts)
+  end
+
+  defp validate_username(changeset, opts) do
+    changeset =
+      changeset
+      |> validate_required([:username])
+      |> validate_length(:username, min: 3, max: 20)
+      |> validate_format(
+        :username,
+        ~r/^[a-zA-Z0-9]/,
+        message: "must start with a letter or number"
+      )
+      |> validate_format(
+        :username,
+        ~r/[a-zA-Z0-9]$/,
+        message: "must end with a letter or number"
+      )
+      |> validate_format(
+        :username,
+        ~r/^[a-zA-Z0-9._]+$/,
+        message: "can only contain letters, numbers, underscores, and periods"
+      )
+      |> validate_format(
+        :username,
+        ~r/^(?!.*[_.]{2})/,
+        message: "cannot contain consecutive underscores or periods"
+      )
+      |> check_constraint(:username, name: :username_format_chk, message: "has an invalid format")
+
+    if Keyword.get(opts, :validate_unique, true) do
+      changeset
+      |> unsafe_validate_unique(:username, Fortymm.Repo, match: :normalized_username)
+      |> unique_constraint(:username,
+        name: :users_normalized_username_uidx,
+        message: "has already been taken"
+      )
+      |> validate_username_changed()
+    else
+      changeset
+    end
+  end
+
+  defp validate_username_changed(changeset) do
+    if get_field(changeset, :username) && get_change(changeset, :username) == nil do
+      add_error(changeset, :username, "did not change")
     else
       changeset
     end
