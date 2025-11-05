@@ -451,6 +451,7 @@ defmodule FortymmWeb.CoreComponents do
     |> JS.show(
       to: "#{selector} aside",
       time: 300,
+      display: "flex",
       transition: {"transition-all ease-out duration-300", "-translate-x-full", "translate-x-0"}
     )
   end
