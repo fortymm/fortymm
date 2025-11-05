@@ -10,6 +10,8 @@ defmodule Fortymm.Accounts.User do
     field :authenticated_at, :utc_datetime, virtual: true
     field :username, :string
 
+    belongs_to :role, Fortymm.Accounts.Role
+
     timestamps(type: :utc_datetime)
   end
 

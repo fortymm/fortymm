@@ -329,6 +329,80 @@ defmodule Fortymm.Accounts do
     :ok
   end
 
+  ## Authorization & Permissions
+
+  alias Fortymm.Accounts.Role
+
+  @doc """
+  Checks if a user has a specific permission by slug.
+
+  ## Examples
+
+      iex> has_permission?(%User{}, "access_administration")
+      true
+
+      iex> has_permission?(%User{}, "manage_users")
+      false
+
+  """
+  def has_permission?(%User{role_id: nil}, _permission_slug), do: false
+
+  def has_permission?(%User{} = user, permission_slug) do
+    user = Repo.preload(user, role: :permissions)
+
+    user.role.permissions
+    |> Enum.any?(fn permission -> permission.slug == permission_slug end)
+  end
+
+  @doc """
+  Gets a user with their role and permissions preloaded.
+
+  ## Examples
+
+      iex> get_user_with_permissions(123)
+      %User{role: %Role{permissions: [...]}}
+
+  """
+  def get_user_with_permissions(id) do
+    User
+    |> Repo.get(id)
+    |> Repo.preload(role: :permissions)
+  end
+
+  @doc """
+  Gets a role by name.
+
+  ## Examples
+
+      iex> get_role_by_name("administrator")
+      %Role{}
+
+  """
+  def get_role_by_name(name) do
+    Repo.get_by(Role, name: name)
+  end
+
+  @doc """
+  Assigns a role to a user.
+
+  ## Examples
+
+      iex> assign_role(user, "administrator")
+      {:ok, %User{}}
+
+  """
+  def assign_role(%User{} = user, role_name) when is_binary(role_name) do
+    role = get_role_by_name(role_name)
+
+    if role do
+      user
+      |> Ecto.Changeset.change(role_id: role.id)
+      |> Repo.update()
+    else
+      {:error, :role_not_found}
+    end
+  end
+
   ## Token helper
 
   defp update_user_and_delete_all_tokens(changeset) do

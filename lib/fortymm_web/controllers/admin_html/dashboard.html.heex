@@ -1,0 +1,103 @@
+<div class="max-w-6xl mx-auto">
+  <.header>
+    Administration Dashboard
+    <:subtitle>Manage your application settings and users</:subtitle>
+  </.header>
+
+  <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <%!-- Users Management Card --%>
+    <div class="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow">
+      <div class="card-body">
+        <h2 class="card-title">
+          <.icon name="hero-users" class="size-6 text-primary" /> User Management
+        </h2>
+        <p class="text-sm opacity-75">
+          View and manage user accounts, roles, and permissions.
+        </p>
+        <div class="card-actions justify-end mt-4">
+          <button class="btn btn-primary btn-sm" disabled>
+            Coming Soon
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Roles & Permissions Card --%>
+    <div class="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow">
+      <div class="card-body">
+        <h2 class="card-title">
+          <.icon name="hero-shield-check" class="size-6 text-primary" /> Roles & Permissions
+        </h2>
+        <p class="text-sm opacity-75">
+          Configure roles and assign permissions to control access.
+        </p>
+        <div class="card-actions justify-end mt-4">
+          <button class="btn btn-primary btn-sm" disabled>
+            Coming Soon
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <%!-- System Settings Card --%>
+    <div class="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow">
+      <div class="card-body">
+        <h2 class="card-title">
+          <.icon name="hero-cog-6-tooth" class="size-6 text-primary" /> System Settings
+        </h2>
+        <p class="text-sm opacity-75">
+          Configure application settings and preferences.
+        </p>
+        <div class="card-actions justify-end mt-4">
+          <button class="btn btn-primary btn-sm" disabled>
+            Coming Soon
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Quick Stats --%>
+  <div class="mt-8">
+    <h3 class="text-xl font-bold mb-4">Quick Stats</h3>
+    <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
+      <div class="stat">
+        <div class="stat-figure text-primary">
+          <.icon name="hero-users" class="size-8" />
+        </div>
+        <div class="stat-title">Total Users</div>
+        <div class="stat-value text-primary">-</div>
+        <div class="stat-desc">Coming soon</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-figure text-secondary">
+          <.icon name="hero-user-plus" class="size-8" />
+        </div>
+        <div class="stat-title">New Users (30d)</div>
+        <div class="stat-value text-secondary">-</div>
+        <div class="stat-desc">Coming soon</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-figure text-accent">
+          <.icon name="hero-chart-bar" class="size-8" />
+        </div>
+        <div class="stat-title">Active Challenges</div>
+        <div class="stat-value text-accent">-</div>
+        <div class="stat-desc">Coming soon</div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Info Alert --%>
+  <div class="alert bg-info/10 border-info/20 mt-8">
+    <.icon name="hero-information-circle" class="size-6 text-info" />
+    <div>
+      <div class="font-bold">Administrator Access</div>
+      <div class="text-sm opacity-75">
+        You have full administrative access to this application.
+      </div>
+    </div>
+  </div>
+</div>

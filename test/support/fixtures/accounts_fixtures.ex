@@ -97,4 +97,144 @@ defmodule Fortymm.AccountsFixtures do
       set: [inserted_at: dt, authenticated_at: dt]
     )
   end
+
+  ## Role fixtures
+
+  def role_fixture(attrs \\ %{}) do
+    name = Map.get(attrs, :name, "test_role_#{System.unique_integer([:positive])}")
+
+    {:ok, role} =
+      %Fortymm.Accounts.Role{}
+      |> Fortymm.Accounts.Role.changeset(%{
+        name: name,
+        description: Map.get(attrs, :description, "Test role")
+      })
+      |> Fortymm.Repo.insert()
+
+    role
+  end
+
+  def get_user_role do
+    case Fortymm.Repo.get_by(Fortymm.Accounts.Role, name: "user") do
+      nil ->
+        role = role_fixture(%{name: "user", description: "Standard user with basic permissions"})
+        # Assign access_dashboard permission
+        permission =
+          get_or_create_permission(
+            "access_dashboard",
+            "Access Dashboard",
+            "Can access the main dashboard"
+          )
+
+        role
+        |> Fortymm.Repo.preload(:permissions)
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.put_assoc(:permissions, [permission])
+        |> Fortymm.Repo.update!()
+
+      role ->
+        role
+    end
+  end
+
+  def get_admin_role do
+    case Fortymm.Repo.get_by(Fortymm.Accounts.Role, name: "administrator") do
+      nil ->
+        role =
+          role_fixture(%{name: "administrator", description: "Administrator with full access"})
+
+        # Assign all permissions
+        permissions = [
+          get_or_create_permission(
+            "access_dashboard",
+            "Access Dashboard",
+            "Can access the main dashboard"
+          ),
+          get_or_create_permission(
+            "access_administration",
+            "Access Administration",
+            "Can access the administration panel"
+          ),
+          get_or_create_permission("manage_users", "Manage Users", "Can manage user accounts"),
+          get_or_create_permission(
+            "manage_roles",
+            "Manage Roles",
+            "Can manage roles and permissions"
+          )
+        ]
+
+        role
+        |> Fortymm.Repo.preload(:permissions)
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.put_assoc(:permissions, permissions)
+        |> Fortymm.Repo.update!()
+
+      role ->
+        role
+    end
+  end
+
+  defp get_or_create_permission(slug, name, description) do
+    case Fortymm.Repo.get_by(Fortymm.Accounts.Permission, slug: slug) do
+      nil -> permission_fixture(%{slug: slug, name: name, description: description})
+      permission -> permission
+    end
+  end
+
+  ## Permission fixtures
+
+  def permission_fixture(attrs \\ %{}) do
+    slug = Map.get(attrs, :slug, "test_permission_#{System.unique_integer([:positive])}")
+    name = Map.get(attrs, :name, String.replace(slug, "_", " ") |> String.capitalize())
+
+    {:ok, permission} =
+      %Fortymm.Accounts.Permission{}
+      |> Fortymm.Accounts.Permission.changeset(%{
+        name: name,
+        slug: slug,
+        description: Map.get(attrs, :description, "Test permission")
+      })
+      |> Fortymm.Repo.insert()
+
+    permission
+  end
+
+  def get_access_dashboard_permission do
+    get_or_create_permission(
+      "access_dashboard",
+      "Access Dashboard",
+      "Can access the main dashboard"
+    )
+  end
+
+  def get_access_administration_permission do
+    get_or_create_permission(
+      "access_administration",
+      "Access Administration",
+      "Can access the administration panel"
+    )
+  end
+
+  ## User with role fixtures
+
+  def user_with_role_fixture(role_name, attrs \\ %{}) do
+    # Ensure role exists first
+    case role_name do
+      "administrator" -> get_admin_role()
+      "user" -> get_user_role()
+      _ -> :ok
+    end
+
+    user = user_fixture(attrs)
+    {:ok, user} = Accounts.assign_role(user, role_name)
+    user
+  end
+
+  def admin_user_fixture(attrs \\ %{}) do
+    user_with_role_fixture("administrator", attrs)
+  end
+
+  def regular_user_fixture(attrs \\ %{}) do
+    user_with_role_fixture("user", attrs)
+  end
 end

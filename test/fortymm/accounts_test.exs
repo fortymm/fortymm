@@ -394,4 +394,137 @@ defmodule Fortymm.AccountsTest do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
+
+  describe "has_permission?/2" do
+    test "returns false for user without role" do
+      user = user_fixture()
+      refute Accounts.has_permission?(user, "access_administration")
+    end
+
+    test "returns false for user with role but without permission" do
+      user = regular_user_fixture()
+      refute Accounts.has_permission?(user, "access_administration")
+    end
+
+    test "returns true for user with role and permission" do
+      user = admin_user_fixture()
+      assert Accounts.has_permission?(user, "access_administration")
+      assert Accounts.has_permission?(user, "manage_users")
+      assert Accounts.has_permission?(user, "manage_roles")
+      assert Accounts.has_permission?(user, "access_dashboard")
+    end
+
+    test "returns true for regular user with access_dashboard permission" do
+      user = regular_user_fixture()
+      assert Accounts.has_permission?(user, "access_dashboard")
+    end
+
+    test "returns false for non-existent permission" do
+      user = admin_user_fixture()
+      refute Accounts.has_permission?(user, "non_existent_permission")
+    end
+
+    test "handles preloaded roles and permissions" do
+      user = admin_user_fixture() |> Repo.preload(role: :permissions)
+      assert Accounts.has_permission?(user, "access_administration")
+    end
+  end
+
+  describe "get_user_with_permissions/1" do
+    test "returns user with role and permissions preloaded" do
+      user = admin_user_fixture()
+      user_with_perms = Accounts.get_user_with_permissions(user.id)
+
+      assert user_with_perms.id == user.id
+      assert user_with_perms.role.name == "administrator"
+      assert length(user_with_perms.role.permissions) > 0
+
+      assert Enum.any?(user_with_perms.role.permissions, fn p ->
+               p.slug == "access_administration"
+             end)
+    end
+
+    test "returns nil for non-existent user" do
+      refute Accounts.get_user_with_permissions(-1)
+    end
+
+    test "returns user with nil role if no role assigned" do
+      user = user_fixture()
+      user_with_perms = Accounts.get_user_with_permissions(user.id)
+
+      assert user_with_perms.id == user.id
+      assert is_nil(user_with_perms.role_id)
+    end
+  end
+
+  describe "get_role_by_name/1" do
+    test "returns role for valid name" do
+      # Ensure role exists
+      get_admin_role()
+
+      role = Accounts.get_role_by_name("administrator")
+      assert role.name == "administrator"
+    end
+
+    test "returns role for user role" do
+      # Ensure role exists
+      get_user_role()
+
+      role = Accounts.get_role_by_name("user")
+      assert role.name == "user"
+    end
+
+    test "returns nil for non-existent role" do
+      refute Accounts.get_role_by_name("non_existent_role")
+    end
+  end
+
+  describe "assign_role/2" do
+    test "assigns role to user by role name" do
+      # Ensure role exists
+      get_admin_role()
+
+      user = user_fixture()
+      assert is_nil(user.role_id)
+
+      {:ok, updated_user} = Accounts.assign_role(user, "administrator")
+
+      assert updated_user.role_id != nil
+      admin_role = Accounts.get_role_by_name("administrator")
+      assert updated_user.role_id == admin_role.id
+    end
+
+    test "changes user role from one to another" do
+      # Ensure both roles exist
+      get_user_role()
+      get_admin_role()
+
+      user = regular_user_fixture()
+      user_role = Accounts.get_role_by_name("user")
+      assert user.role_id == user_role.id
+
+      {:ok, updated_user} = Accounts.assign_role(user, "administrator")
+
+      admin_role = Accounts.get_role_by_name("administrator")
+      assert updated_user.role_id == admin_role.id
+      refute updated_user.role_id == user_role.id
+    end
+
+    test "returns error for non-existent role" do
+      user = user_fixture()
+      assert {:error, :role_not_found} = Accounts.assign_role(user, "non_existent_role")
+    end
+
+    test "persists role assignment to database" do
+      # Ensure role exists
+      get_user_role()
+
+      user = user_fixture()
+      {:ok, updated_user} = Accounts.assign_role(user, "user")
+
+      # Reload from database
+      reloaded_user = Repo.get!(User, user.id)
+      assert reloaded_user.role_id == updated_user.role_id
+    end
+  end
 end

@@ -61,6 +61,14 @@ defmodule FortymmWeb.Router do
     post "/users/update-password", UserSessionController, :update_password
   end
 
+  ## Administration routes
+
+  scope "/", FortymmWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    get "/administration", AdminController, :dashboard
+  end
+
   scope "/", FortymmWeb do
     pipe_through [:browser]
 
