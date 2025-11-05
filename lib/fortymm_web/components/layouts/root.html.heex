@@ -32,16 +32,14 @@
   </head>
   <body class="min-h-screen bg-base-100">
     <%!-- Navbar --%>
-    <div class="navbar bg-base-200 fixed top-0 left-0 right-0 z-50">
+    <div class="navbar fixed top-0 left-0 right-0 z-50">
       <div class="flex-1">
         <%= if @current_scope do %>
           <%!-- Hamburger menu button - only visible on mobile --%>
           <button
             id="mobile-menu-toggle"
             class="btn btn-ghost btn-square lg:hidden"
-            phx-click={
-              JS.toggle(to: "#mobile-menu") |> JS.toggle_class("hidden", to: "#mobile-menu")
-            }
+            phx-click={show_mobile_menu("#mobile-menu")}
             aria-label="Toggle menu"
           >
             <.icon name="hero-bars-3" class="size-6" />
@@ -59,8 +57,8 @@
           <%= if @current_scope do %>
             <li>
               <div
-                phx-click={JS.toggle(to: "#user-menu")}
-                class="cursor-pointer"
+                phx-click={toggle_user_menu("#user-menu")}
+                class="cursor-pointer flex items-center gap-2"
               >
                 <FortymmWeb.Components.Gravatar.avatar
                   email={@current_scope.user.email}
@@ -68,12 +66,15 @@
                   class="w-5 h-5 rounded-full"
                   alt={@current_scope.user.username}
                 />
-                {@current_scope.user.username}
+                <span class="hidden lg:inline-flex lg:items-center lg:gap-2">
+                  {@current_scope.user.username}
+                  <.icon name="hero-chevron-down" class="size-3 opacity-70" />
+                </span>
               </div>
               <ul
                 id="user-menu"
-                phx-click-away={JS.hide(to: "#user-menu")}
-                class="hidden menu dropdown-content bg-base-200 rounded-box w-56 mt-6 z-[1] p-2 shadow absolute right-0"
+                phx-click-away={hide_user_menu("#user-menu")}
+                class="hidden menu dropdown-content bg-base-200 rounded-box w-56 z-[1] p-2 shadow-lg absolute right-0 top-8"
               >
                 <li>
                   <.link
@@ -106,8 +107,8 @@
     <div class="flex pt-16">
       <%= if @current_scope do %>
         <%!-- Desktop Sidenav - only visible on large screens --%>
-        <aside class="hidden lg:block w-64 bg-base-200 min-h-screen fixed left-0 top-16">
-          <ul class="menu menu-lg bg-base-200 w-full p-2">
+        <aside class="hidden lg:block w-64 bg-base-100 min-h-screen fixed left-0 top-16">
+          <ul class="menu menu-lg bg-base-100 w-full p-2">
             <li>
               <.link
                 href={~p"/dashboard"}
@@ -126,16 +127,16 @@
         >
           <button
             class="btn btn-ghost btn-sm btn-circle absolute top-4 left-[272px] text-white"
-            phx-click={JS.hide(to: "#mobile-menu") |> JS.add_class("hidden", to: "#mobile-menu")}
+            phx-click={hide_mobile_menu("#mobile-menu")}
             aria-label="Close menu"
           >
             <.icon name="hero-x-mark" class="size-6" />
           </button>
           <aside
-            class="w-64 bg-base-200 min-h-screen shadow-2xl animate-slide-in-left"
+            class="w-64 bg-base-100 min-h-screen shadow-2xl"
             phx-click={JS.exec("event.stopPropagation()")}
           >
-            <ul class="menu menu-lg bg-base-200 w-full p-2 pt-4">
+            <ul class="menu menu-lg w-full p-2 pt-4">
               <li>
                 <.link
                   href={~p"/dashboard"}
@@ -148,7 +149,7 @@
           </aside>
           <div
             class="absolute inset-0 -z-10"
-            phx-click={JS.hide(to: "#mobile-menu") |> JS.add_class("hidden", to: "#mobile-menu")}
+            phx-click={hide_mobile_menu("#mobile-menu")}
           >
           </div>
         </div>
