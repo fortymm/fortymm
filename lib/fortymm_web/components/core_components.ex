@@ -442,6 +442,64 @@ defmodule FortymmWeb.CoreComponents do
     )
   end
 
+  def show_mobile_menu(js \\ %JS{}, selector) do
+    JS.show(js,
+      to: selector,
+      time: 300,
+      transition: {"transition-all ease-out duration-300", "opacity-0", "opacity-100"}
+    )
+    |> JS.show(
+      to: "#{selector} aside",
+      time: 300,
+      transition: {"transition-all ease-out duration-300", "-translate-x-full", "translate-x-0"}
+    )
+  end
+
+  def hide_mobile_menu(js \\ %JS{}, selector) do
+    JS.hide(js,
+      to: "#{selector} aside",
+      time: 300,
+      transition: {"transition-all ease-in duration-300", "translate-x-0", "-translate-x-full"}
+    )
+    |> JS.hide(
+      to: selector,
+      time: 300,
+      transition: {"transition-all ease-in duration-300", "opacity-100", "opacity-0"}
+    )
+  end
+
+  def show_user_menu(js \\ %JS{}, selector) do
+    JS.show(js,
+      to: selector,
+      time: 100,
+      transition:
+        {"transition ease-out duration-100", "transform opacity-0 scale-95",
+         "transform opacity-100 scale-100"}
+    )
+  end
+
+  def hide_user_menu(js \\ %JS{}, selector) do
+    JS.hide(js,
+      to: selector,
+      time: 75,
+      transition:
+        {"transition ease-in duration-75", "transform opacity-100 scale-100",
+         "transform opacity-0 scale-95"}
+    )
+  end
+
+  def toggle_user_menu(js \\ %JS{}, selector) do
+    JS.toggle(js,
+      to: selector,
+      in:
+        {"transition ease-out duration-100", "transform opacity-0 scale-95",
+         "transform opacity-100 scale-100"},
+      out:
+        {"transition ease-in duration-75", "transform opacity-100 scale-100",
+         "transform opacity-0 scale-95"}
+    )
+  end
+
   @doc """
   Translates an error message using gettext.
   """
