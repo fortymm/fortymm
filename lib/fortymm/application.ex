@@ -12,6 +12,8 @@ defmodule Fortymm.Application do
       Fortymm.Repo,
       {DNSCluster, query: Application.get_env(:fortymm, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Fortymm.PubSub},
+      # Start the ETS-backed challenge store
+      Fortymm.Matches.ChallengeStore,
       # Start a worker by calling: Fortymm.Worker.start_link(arg)
       # {Fortymm.Worker, arg},
       # Start to serve requests, typically the last entry

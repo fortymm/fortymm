@@ -1,6 +1,8 @@
 defmodule FortymmWeb.ChallengeLive.WaitingRoom do
   use FortymmWeb, :live_view
 
+  alias Fortymm.Matches
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -27,17 +29,28 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
             <div class="w-full max-w-md space-y-4 mb-6">
               <div class="flex justify-between items-center p-4 bg-base-100 rounded-lg">
                 <span class="font-semibold">Challenge ID:</span>
-                <span class="font-mono text-primary">#{@challenge_id}</span>
+                <span class="font-mono text-primary">#{String.slice(@challenge.id, 0..7)}</span>
+              </div>
+
+              <div class="flex justify-between items-center p-4 bg-base-100 rounded-lg">
+                <span class="font-semibold">Match Length:</span>
+                <span>Best of {@challenge.length_in_games}</span>
+              </div>
+
+              <div class="flex justify-between items-center p-4 bg-base-100 rounded-lg">
+                <span class="font-semibold">Match Type:</span>
+                <span class="flex items-center gap-2">
+                  <%= if @challenge.rated do %>
+                    <span class="badge badge-primary">Rated</span>
+                  <% else %>
+                    <span class="badge badge-ghost">Unrated</span>
+                  <% end %>
+                </span>
               </div>
 
               <div class="flex justify-between items-center p-4 bg-base-100 rounded-lg">
                 <span class="font-semibold">Opponent:</span>
                 <span>Waiting...</span>
-              </div>
-
-              <div class="flex justify-between items-center p-4 bg-base-100 rounded-lg">
-                <span class="font-semibold">Challenge Type:</span>
-                <span>Quick Match</span>
               </div>
             </div>
 
@@ -70,15 +83,26 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    socket =
-      socket
-      |> assign(:challenge_id, id)
+    case Matches.get_challenge(id) do
+      {:ok, challenge} ->
+        socket =
+          socket
+          |> assign(:challenge, challenge)
 
-    {:ok, socket}
+        {:ok, socket}
+
+      {:error, :not_found} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Challenge not found")
+         |> push_navigate(to: ~p"/dashboard")}
+    end
   end
 
   @impl true
   def handle_event("cancel_challenge", _params, socket) do
+    Matches.delete_challenge(socket.assigns.challenge.id)
+
     {:noreply,
      socket
      |> put_flash(:info, "Challenge cancelled")

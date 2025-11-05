@@ -1,6 +1,8 @@
 defmodule FortymmWeb.DashboardLive do
   use FortymmWeb, :live_view
 
+  alias Fortymm.Matches
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -95,47 +97,86 @@ defmodule FortymmWeb.DashboardLive do
               <h3 class="text-2xl font-bold">Challenge a Friend</h3>
             </div>
 
-            <.form for={%{}} phx-submit="create_challenge" id="challenge-form">
-              <div class="space-y-4">
+            <.form for={@form} phx-submit="create_challenge" id="challenge-form">
+              <div class="space-y-6">
                 <div>
                   <label class="label">
-                    <span class="label-text font-semibold">Friend's Email or Username</span>
+                    <span class="label-text font-semibold">Match Length (Best of)</span>
                   </label>
-                  <input
-                    type="text"
-                    name="opponent"
-                    placeholder="Enter email or username"
-                    class="input input-bordered w-full"
-                    required
-                  />
-                  <label class="label">
-                    <span class="label-text-alt text-base-content/60">
-                      We'll send them an invitation to compete
-                    </span>
-                  </label>
+                  <div class="grid grid-cols-2 gap-3">
+                    <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
+                      <input
+                        type="radio"
+                        name="challenge[length_in_games]"
+                        value="1"
+                        class="radio radio-primary"
+                      />
+                      <span class="label-text font-medium">Best of 1</span>
+                    </label>
+
+                    <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
+                      <input
+                        type="radio"
+                        name="challenge[length_in_games]"
+                        value="3"
+                        class="radio radio-primary"
+                        checked
+                      />
+                      <span class="label-text font-medium">Best of 3</span>
+                    </label>
+
+                    <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
+                      <input
+                        type="radio"
+                        name="challenge[length_in_games]"
+                        value="5"
+                        class="radio radio-primary"
+                      />
+                      <span class="label-text font-medium">Best of 5</span>
+                    </label>
+
+                    <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
+                      <input
+                        type="radio"
+                        name="challenge[length_in_games]"
+                        value="7"
+                        class="radio radio-primary"
+                      />
+                      <span class="label-text font-medium">Best of 7</span>
+                    </label>
+                  </div>
+                  <%= if @form[:length_in_games].errors != [] do %>
+                    <label class="label">
+                      <span class="label-text-alt text-error">
+                        {Enum.map(@form[:length_in_games].errors, fn {msg, _} -> msg end)
+                        |> Enum.join(", ")}
+                      </span>
+                    </label>
+                  <% end %>
                 </div>
 
                 <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Challenge Type</span>
+                  <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
+                    <input
+                      type="checkbox"
+                      name="challenge[rated]"
+                      value="true"
+                      class="checkbox checkbox-primary"
+                    />
+                    <div class="flex-1">
+                      <span class="label-text font-semibold block">Rated Match</span>
+                      <span class="label-text-alt text-base-content/60">
+                        This match will affect your rating
+                      </span>
+                    </div>
                   </label>
-                  <select name="challenge_type" class="select select-bordered w-full">
-                    <option selected>Quick Match (5 rounds)</option>
-                    <option>Standard (10 rounds)</option>
-                    <option>Marathon (20 rounds)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Optional Message</span>
-                  </label>
-                  <textarea
-                    name="message"
-                    class="textarea textarea-bordered w-full h-24"
-                    placeholder="Add a friendly message or trash talk..."
-                  >
-                  </textarea>
+                  <%= if @form[:rated].errors != [] do %>
+                    <label class="label">
+                      <span class="label-text-alt text-error">
+                        {Enum.map(@form[:rated].errors, fn {msg, _} -> msg end) |> Enum.join(", ")}
+                      </span>
+                    </label>
+                  <% end %>
                 </div>
               </div>
 
@@ -157,19 +198,27 @@ defmodule FortymmWeb.DashboardLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    form = Matches.challenge_changeset() |> to_form()
+
     socket =
       socket
       |> assign(:active_nav, :dashboard)
+      |> assign(:form, form)
 
     {:ok, socket}
   end
 
   @impl true
-  def handle_event("create_challenge", _params, socket) do
-    # Generate a temporary challenge ID
-    # In the future, this would come from the database after creating the challenge
-    challenge_id = :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
+  def handle_event("create_challenge", %{"challenge" => challenge_params}, socket) do
+    case Matches.create_challenge(challenge_params) do
+      {:ok, challenge} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Challenge created successfully!")
+         |> push_navigate(to: ~p"/challenges/#{challenge.id}/waiting_room")}
 
-    {:noreply, push_navigate(socket, to: ~p"/challenges/#{challenge_id}/waiting_room")}
+      {:error, changeset} ->
+        {:noreply, assign(socket, :form, to_form(changeset))}
+    end
   end
 end
