@@ -210,7 +210,10 @@ defmodule FortymmWeb.DashboardLive do
 
   @impl true
   def handle_event("create_challenge", %{"challenge" => challenge_params}, socket) do
-    case Matches.create_challenge(challenge_params) do
+    challenge_params_with_creator =
+      Map.put(challenge_params, "created_by_id", socket.assigns.current_scope.user.id)
+
+    case Matches.create_challenge(challenge_params_with_creator) do
       {:ok, challenge} ->
         {:noreply,
          socket

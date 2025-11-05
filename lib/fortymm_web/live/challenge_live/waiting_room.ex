@@ -85,11 +85,20 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
   def mount(%{"id" => id}, _session, socket) do
     case Matches.get_challenge(id) do
       {:ok, challenge} ->
-        socket =
-          socket
-          |> assign(:challenge, challenge)
+        current_user_id = socket.assigns.current_scope.user.id
 
-        {:ok, socket}
+        if challenge.created_by_id == current_user_id do
+          socket =
+            socket
+            |> assign(:challenge, challenge)
+
+          {:ok, socket}
+        else
+          {:ok,
+           socket
+           |> put_flash(:error, "You are not authorized to view this challenge")
+           |> push_navigate(to: ~p"/dashboard")}
+        end
 
       {:error, :not_found} ->
         {:ok,
