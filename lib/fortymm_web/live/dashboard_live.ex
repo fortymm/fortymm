@@ -12,6 +12,28 @@ defmodule FortymmWeb.DashboardLive do
         </.header>
 
         <div class="mt-8 grid gap-6">
+          <%!-- Challenge a Friend Card --%>
+          <div class="card bg-gradient-to-br from-primary/20 to-secondary/20 shadow-xl border border-primary/30">
+            <div class="card-body">
+              <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="text-center sm:text-left">
+                  <h2 class="card-title text-2xl mb-2">
+                    <.icon name="hero-trophy" class="size-7 text-primary" /> Challenge a Friend
+                  </h2>
+                  <p class="text-base opacity-90">
+                    Ready to put your skills to the test? Invite a friend and see who comes out on top!
+                  </p>
+                </div>
+                <button
+                  class="btn btn-primary btn-lg gap-2 shadow-lg hover:shadow-xl transition-all"
+                  onclick="challenge_modal.showModal()"
+                >
+                  <.icon name="hero-user-plus" class="size-5" /> Start Challenge
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="card bg-base-200 shadow-xl">
             <div class="card-body">
               <h2 class="card-title text-2xl">🚀 Coming Soon!</h2>
@@ -58,6 +80,76 @@ defmodule FortymmWeb.DashboardLive do
             </div>
           </div>
         </div>
+
+        <%!-- Challenge Modal --%>
+        <dialog id="challenge_modal" class="modal modal-bottom sm:modal-middle">
+          <div class="modal-box max-w-2xl">
+            <form method="dialog">
+              <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                <.icon name="hero-x-mark" class="size-5" />
+              </button>
+            </form>
+
+            <div class="flex items-center gap-3 mb-6">
+              <.icon name="hero-trophy" class="size-8 text-primary" />
+              <h3 class="text-2xl font-bold">Challenge a Friend</h3>
+            </div>
+
+            <.form for={%{}} phx-submit="create_challenge" id="challenge-form">
+              <div class="space-y-4">
+                <div>
+                  <label class="label">
+                    <span class="label-text font-semibold">Friend's Email or Username</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="opponent"
+                    placeholder="Enter email or username"
+                    class="input input-bordered w-full"
+                    required
+                  />
+                  <label class="label">
+                    <span class="label-text-alt text-base-content/60">
+                      We'll send them an invitation to compete
+                    </span>
+                  </label>
+                </div>
+
+                <div>
+                  <label class="label">
+                    <span class="label-text font-semibold">Challenge Type</span>
+                  </label>
+                  <select name="challenge_type" class="select select-bordered w-full">
+                    <option selected>Quick Match (5 rounds)</option>
+                    <option>Standard (10 rounds)</option>
+                    <option>Marathon (20 rounds)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="label">
+                    <span class="label-text font-semibold">Optional Message</span>
+                  </label>
+                  <textarea
+                    name="message"
+                    class="textarea textarea-bordered w-full h-24"
+                    placeholder="Add a friendly message or trash talk..."
+                  >
+                  </textarea>
+                </div>
+              </div>
+
+              <div class="modal-action">
+                <button type="button" class="btn btn-ghost" onclick="challenge_modal.close()">
+                  Cancel
+                </button>
+                <button type="submit" class="btn btn-primary gap-2">
+                  <.icon name="hero-paper-airplane" class="size-5" /> Send Challenge
+                </button>
+              </div>
+            </.form>
+          </div>
+        </dialog>
       </div>
     </Layouts.app>
     """
@@ -70,5 +162,14 @@ defmodule FortymmWeb.DashboardLive do
       |> assign(:active_nav, :dashboard)
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_event("create_challenge", _params, socket) do
+    # Generate a temporary challenge ID
+    # In the future, this would come from the database after creating the challenge
+    challenge_id = :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
+
+    {:noreply, push_navigate(socket, to: ~p"/challenges/#{challenge_id}/waiting_room")}
   end
 end
