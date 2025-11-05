@@ -1,0 +1,101 @@
+defmodule Fortymm.Matches do
+  @moduledoc """
+  The Matches context.
+  """
+
+  alias Fortymm.Matches.{Challenge, ChallengeStore}
+
+  @doc """
+  Creates a changeset for a Challenge.
+
+  ## Examples
+
+      iex> challenge_changeset(%{length_in_games: 3})
+      %Ecto.Changeset{valid?: true}
+
+      iex> challenge_changeset(%{length_in_games: 2})
+      %Ecto.Changeset{valid?: false}
+
+  """
+  def challenge_changeset(attrs \\ %{}) do
+    Challenge.changeset(%Challenge{}, attrs)
+  end
+
+  @doc """
+  Creates a challenge and stores it in ETS.
+
+  Returns `{:ok, challenge}` if the challenge is valid and stored successfully.
+  Returns `{:error, changeset}` if the challenge is invalid.
+
+  ## Examples
+
+      iex> create_challenge(%{length_in_games: 3})
+      {:ok, %Challenge{id: "...", length_in_games: 3}}
+
+      iex> create_challenge(%{length_in_games: 2})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_challenge(attrs) do
+    changeset = challenge_changeset(attrs)
+
+    if changeset.valid? do
+      challenge = Ecto.Changeset.apply_changes(changeset)
+      challenge_with_id = %{challenge | id: generate_id()}
+
+      ChallengeStore.insert(challenge_with_id.id, challenge_with_id)
+      {:ok, challenge_with_id}
+    else
+      {:error, changeset}
+    end
+  end
+
+  @doc """
+  Gets a challenge by ID from ETS.
+
+  Returns `{:ok, challenge}` if found.
+  Returns `{:error, :not_found}` if not found.
+
+  ## Examples
+
+      iex> get_challenge("valid-id")
+      {:ok, %Challenge{}}
+
+      iex> get_challenge("invalid-id")
+      {:error, :not_found}
+
+  """
+  def get_challenge(id) do
+    ChallengeStore.get(id)
+  end
+
+  @doc """
+  Lists all challenges from ETS.
+
+  ## Examples
+
+      iex> list_challenges()
+      [%Challenge{}, ...]
+
+  """
+  def list_challenges do
+    ChallengeStore.list_all()
+  end
+
+  @doc """
+  Deletes a challenge by ID from ETS.
+
+  ## Examples
+
+      iex> delete_challenge("valid-id")
+      :ok
+
+  """
+  def delete_challenge(id) do
+    ChallengeStore.delete(id)
+  end
+
+  defp generate_id do
+    :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
+  end
+end

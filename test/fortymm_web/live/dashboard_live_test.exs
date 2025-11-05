@@ -113,23 +113,22 @@ defmodule FortymmWeb.DashboardLiveTest do
         |> log_in_user(user)
         |> live(~p"/dashboard")
 
-      # Check for opponent input
-      assert has_element?(lv, "input[name='opponent']")
-      assert has_element?(lv, "label", "Friend's Email or Username")
+      # Check for length_in_games radio buttons
+      assert has_element?(lv, "input[name='challenge[length_in_games]'][value='1']")
+      assert has_element?(lv, "input[name='challenge[length_in_games]'][value='3']")
+      assert has_element?(lv, "input[name='challenge[length_in_games]'][value='5']")
+      assert has_element?(lv, "input[name='challenge[length_in_games]'][value='7']")
+      assert has_element?(lv, "label", "Match Length (Best of)")
 
-      # Check for challenge type select
-      assert has_element?(lv, "select[name='challenge_type']")
-      assert has_element?(lv, "label", "Challenge Type")
-
-      # Check for message textarea
-      assert has_element?(lv, "textarea[name='message']")
-      assert has_element?(lv, "label", "Optional Message")
+      # Check for rated checkbox
+      assert has_element?(lv, "input[name='challenge[rated]'][type='checkbox']")
+      assert has_element?(lv, "label", "Rated Match")
 
       # Check for submit button
       assert has_element?(lv, "button[type='submit']", "Send Challenge")
     end
 
-    test "challenge form displays challenge type options", %{conn: conn} do
+    test "challenge form displays match length options", %{conn: conn} do
       user = user_fixture()
 
       {:ok, _lv, html} =
@@ -137,9 +136,10 @@ defmodule FortymmWeb.DashboardLiveTest do
         |> log_in_user(user)
         |> live(~p"/dashboard")
 
-      assert html =~ "Quick Match (5 rounds)"
-      assert html =~ "Standard (10 rounds)"
-      assert html =~ "Marathon (20 rounds)"
+      assert html =~ "Best of 1"
+      assert html =~ "Best of 3"
+      assert html =~ "Best of 5"
+      assert html =~ "Best of 7"
     end
 
     test "submitting challenge form redirects to waiting room", %{conn: conn} do
@@ -153,26 +153,16 @@ defmodule FortymmWeb.DashboardLiveTest do
       result =
         lv
         |> form("#challenge-form", %{
-          "opponent" => "friend@example.com",
-          "message" => "Let's play!"
+          "challenge" => %{
+            "length_in_games" => "3",
+            "rated" => "true"
+          }
         })
         |> render_submit()
 
       # Should redirect to waiting room with a challenge ID
       assert {:error, {:live_redirect, %{to: path}}} = result
       assert path =~ ~r{^/challenges/.+/waiting_room$}
-    end
-
-    test "challenge form requires opponent field", %{conn: conn} do
-      user = user_fixture()
-
-      {:ok, lv, _html} =
-        conn
-        |> log_in_user(user)
-        |> live(~p"/dashboard")
-
-      # Opponent field should be required
-      assert has_element?(lv, "input[name='opponent'][required]")
     end
 
     test "submitting challenge with minimal data redirects successfully", %{conn: conn} do
@@ -186,11 +176,13 @@ defmodule FortymmWeb.DashboardLiveTest do
       result =
         lv
         |> form("#challenge-form", %{
-          "opponent" => "testuser"
+          "challenge" => %{
+            "length_in_games" => "5"
+          }
         })
         |> render_submit()
 
-      # Should still redirect even without optional message
+      # Should still redirect even when rated defaults to false
       assert {:error, {:live_redirect, %{to: path}}} = result
       assert path =~ ~r{^/challenges/.+/waiting_room$}
     end
@@ -206,7 +198,9 @@ defmodule FortymmWeb.DashboardLiveTest do
 
       {:error, {:live_redirect, %{to: path1}}} =
         lv1
-        |> form("#challenge-form", %{"opponent" => "user1@example.com"})
+        |> form("#challenge-form", %{
+          "challenge" => %{"length_in_games" => "3"}
+        })
         |> render_submit()
 
       # Start a new session and submit second challenge
@@ -217,7 +211,9 @@ defmodule FortymmWeb.DashboardLiveTest do
 
       {:error, {:live_redirect, %{to: path2}}} =
         lv2
-        |> form("#challenge-form", %{"opponent" => "user2@example.com"})
+        |> form("#challenge-form", %{
+          "challenge" => %{"length_in_games" => "7"}
+        })
         |> render_submit()
 
       # Challenge IDs should be different
@@ -248,18 +244,6 @@ defmodule FortymmWeb.DashboardLiveTest do
 
       # Should have X button in dialog
       assert has_element?(lv, "#challenge_modal form[method='dialog'] button")
-    end
-
-    test "challenge form has helper text", %{conn: conn} do
-      user = user_fixture()
-
-      {:ok, _lv, html} =
-        conn
-        |> log_in_user(user)
-        |> live(~p"/dashboard")
-
-      assert html =~ "We&#39;ll send them an invitation to compete"
-      assert html =~ "Add a friendly message or trash talk"
     end
   end
 end
