@@ -47,7 +47,12 @@
             <.icon name="hero-bars-3" class="size-6" />
           </button>
         <% end %>
-        <.link href={~p"/"} class="btn btn-ghost text-xl">FortyMM</.link>
+        <.link
+          href={if @current_scope, do: ~p"/dashboard", else: ~p"/"}
+          class="btn btn-ghost text-xl"
+        >
+          FortyMM
+        </.link>
       </div>
       <div class="flex-none">
         <ul class="menu menu-horizontal px-1">
@@ -105,8 +110,8 @@
           <ul class="menu menu-lg bg-base-200 w-full p-2">
             <li>
               <.link
-                href={~p"/users/settings"}
-                class={[assigns[:active_nav] == :settings && "menu-active"]}
+                href={~p"/dashboard"}
+                class={[assigns[:active_nav] == :dashboard && "menu-active"]}
               >
                 <.icon name="hero-home" class="size-5" /> Dashboard
               </.link>
@@ -133,8 +138,8 @@
             <ul class="menu menu-lg bg-base-200 w-full p-2 pt-4">
               <li>
                 <.link
-                  href={~p"/users/settings"}
-                  class={[assigns[:active_nav] == :settings && "menu-active"]}
+                  href={~p"/dashboard"}
+                  class={[assigns[:active_nav] == :dashboard && "menu-active"]}
                 >
                   <.icon name="hero-home" class="size-5" /> Dashboard
                 </.link>
