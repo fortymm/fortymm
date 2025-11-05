@@ -30,9 +30,23 @@
       })();
     </script>
   </head>
-  <body>
-    <div class="navbar bg-base-200 shadow-sm">
+  <body class="min-h-screen bg-base-100">
+    <%!-- Navbar --%>
+    <div class="navbar bg-base-200 fixed top-0 left-0 right-0 z-50">
       <div class="flex-1">
+        <%= if @current_scope do %>
+          <%!-- Hamburger menu button - only visible on mobile --%>
+          <button
+            id="mobile-menu-toggle"
+            class="btn btn-ghost btn-square lg:hidden"
+            phx-click={
+              JS.toggle(to: "#mobile-menu") |> JS.toggle_class("hidden", to: "#mobile-menu")
+            }
+            aria-label="Toggle menu"
+          >
+            <.icon name="hero-bars-3" class="size-6" />
+          </button>
+        <% end %>
         <.link href={~p"/"} class="btn btn-ghost text-xl">FortyMM</.link>
       </div>
       <div class="flex-none">
@@ -57,7 +71,10 @@
                 class="hidden menu dropdown-content bg-base-200 rounded-box w-56 mt-6 z-[1] p-2 shadow absolute right-0"
               >
                 <li>
-                  <.link href={~p"/users/settings"}>
+                  <.link
+                    href={~p"/users/settings"}
+                    class={[assigns[:active_nav] == :settings && "menu-active"]}
+                  >
                     <.icon name="hero-user-circle" class="size-5" /> Account Settings
                   </.link>
                 </li>
@@ -79,6 +96,68 @@
         </ul>
       </div>
     </div>
-    {@inner_content}
+
+    <%!-- Main content area with sidenav --%>
+    <div class="flex pt-16">
+      <%= if @current_scope do %>
+        <%!-- Desktop Sidenav - only visible on large screens --%>
+        <aside class="hidden lg:block w-64 bg-base-200 min-h-screen fixed left-0 top-16">
+          <ul class="menu menu-lg bg-base-200 w-full p-2">
+            <li>
+              <.link
+                href={~p"/users/settings"}
+                class={[assigns[:active_nav] == :settings && "menu-active"]}
+              >
+                <.icon name="hero-home" class="size-5" /> Dashboard
+              </.link>
+            </li>
+          </ul>
+        </aside>
+
+        <%!-- Mobile Menu - overlay that shows when hamburger is clicked --%>
+        <div
+          id="mobile-menu"
+          class="hidden fixed inset-0 bg-black/50 z-[60] lg:hidden"
+        >
+          <button
+            class="btn btn-ghost btn-sm btn-circle absolute top-4 left-[272px] text-white"
+            phx-click={JS.hide(to: "#mobile-menu") |> JS.add_class("hidden", to: "#mobile-menu")}
+            aria-label="Close menu"
+          >
+            <.icon name="hero-x-mark" class="size-6" />
+          </button>
+          <aside
+            class="w-64 bg-base-200 min-h-screen shadow-2xl animate-slide-in-left"
+            phx-click={JS.exec("event.stopPropagation()")}
+          >
+            <ul class="menu menu-lg bg-base-200 w-full p-2 pt-4">
+              <li>
+                <.link
+                  href={~p"/users/settings"}
+                  class={[assigns[:active_nav] == :settings && "menu-active"]}
+                >
+                  <.icon name="hero-home" class="size-5" /> Dashboard
+                </.link>
+              </li>
+            </ul>
+          </aside>
+          <div
+            class="absolute inset-0 -z-10"
+            phx-click={JS.hide(to: "#mobile-menu") |> JS.add_class("hidden", to: "#mobile-menu")}
+          >
+          </div>
+        </div>
+
+        <%!-- Main content with left margin for sidenav on desktop --%>
+        <main class="flex-1 lg:ml-64 p-4">
+          {@inner_content}
+        </main>
+      <% else %>
+        <%!-- No sidenav for logged out users --%>
+        <main class="flex-1 p-4">
+          {@inner_content}
+        </main>
+      <% end %>
+    </div>
   </body>
 </html>

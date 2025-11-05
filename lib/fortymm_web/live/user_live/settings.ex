@@ -105,6 +105,7 @@ defmodule FortymmWeb.UserLive.Settings do
       |> assign(:username_form, to_form(username_changeset))
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:trigger_submit, false)
+      |> assign(:active_nav, :settings)
 
     {:ok, socket}
   end
