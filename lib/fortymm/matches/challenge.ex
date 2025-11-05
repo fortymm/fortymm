@@ -11,6 +11,7 @@ defmodule Fortymm.Matches.Challenge do
   embedded_schema do
     field :length_in_games, :integer
     field :rated, :boolean, default: false
+    field :created_by_id, :integer
   end
 
   @doc """
@@ -27,8 +28,8 @@ defmodule Fortymm.Matches.Challenge do
   """
   def changeset(challenge, attrs) do
     challenge
-    |> cast(attrs, [:length_in_games, :rated])
-    |> validate_required([:length_in_games])
+    |> cast(attrs, [:length_in_games, :rated, :created_by_id])
+    |> validate_required([:length_in_games, :created_by_id])
     |> validate_inclusion(:length_in_games, @valid_lengths,
       message: "must be one of: #{Enum.join(@valid_lengths, ", ")}"
     )
