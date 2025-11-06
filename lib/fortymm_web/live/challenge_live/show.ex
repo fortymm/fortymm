@@ -102,32 +102,7 @@ defmodule FortymmWeb.ChallengeLive.Show do
     case Matches.get_challenge(id) do
       {:ok, challenge} ->
         current_user = socket.assigns.current_scope.user
-
-        # If the user is the creator, redirect them to the waiting room
-        if challenge.created_by_id == current_user.id do
-          {:ok,
-           socket
-           |> push_navigate(to: ~p"/challenges/#{challenge.id}/waiting_room")}
-        else
-          # Otherwise, show the challenge details and track presence
-          topic = "challenge:#{challenge.id}"
-
-          if connected?(socket) do
-            Phoenix.PubSub.subscribe(Fortymm.PubSub, topic)
-
-            {:ok, _} =
-              Presence.track(self(), topic, current_user.id, %{
-                username: current_user.username,
-                joined_at: System.system_time(:second)
-              })
-          end
-
-          socket =
-            socket
-            |> assign(:challenge, challenge)
-
-          {:ok, socket}
-        end
+        maybe_redirect_or_show(socket, challenge, current_user)
 
       {:error, :not_found} ->
         {:ok,
@@ -178,6 +153,111 @@ defmodule FortymmWeb.ChallengeLive.Show do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to decline challenge. Please try again.")}
+    end
+  end
+
+  @impl true
+  def handle_info(%{event: "presence_diff"}, socket) do
+    # Presence tracking is happening but we don't need to update the UI
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:challenge_updated, challenge}, socket) do
+    current_user_id = socket.assigns.current_scope.user.id
+    status = Matches.status(challenge)
+    is_creator = challenge.created_by_id == current_user_id
+
+    socket =
+      case {status, is_creator} do
+        # Still pending: update the challenge
+        {:challenge_pending, false} ->
+          assign(socket, :challenge, challenge)
+
+        # Any other case: apply common redirect logic
+        _ ->
+          socket
+          |> apply_status_redirect(challenge, status, is_creator)
+          |> elem(1)
+      end
+
+    {:noreply, socket}
+  end
+
+  defp maybe_redirect_or_show(socket, challenge, current_user) do
+    status = Matches.status(challenge)
+    is_creator = challenge.created_by_id == current_user.id
+
+    case {status, is_creator} do
+      # Pending: creator redirected to waiting room
+      {:challenge_pending, true} ->
+        {:ok,
+         socket
+         |> put_flash(:info, "View the waiting room to see who's checking out your challenge")
+         |> push_navigate(to: ~p"/challenges/#{challenge.id}/waiting_room")}
+
+      # Pending: non-creator can see show page
+      {:challenge_pending, false} ->
+        topic = "challenge:#{challenge.id}"
+
+        if connected?(socket) do
+          Phoenix.PubSub.subscribe(Fortymm.PubSub, topic)
+
+          {:ok, _} =
+            Presence.track(self(), topic, current_user.id, %{
+              username: current_user.username,
+              joined_at: System.system_time(:second)
+            })
+        end
+
+        socket =
+          socket
+          |> assign(:challenge, challenge)
+
+        {:ok, socket}
+
+      # Accepted: creator redirected to scoring
+      {:challenge_accepted, true} ->
+        {:ok,
+         socket
+         |> put_flash(:info, "Challenge accepted! Time to enter scores")
+         |> push_navigate(to: ~p"/matches/#{challenge.id}/games/1/scores/new")}
+
+      # Common redirects: use utility function
+      _ ->
+        apply_status_redirect(socket, challenge, status, is_creator)
+    end
+  end
+
+  defp apply_status_redirect(socket, challenge, status, is_creator) do
+    case {status, is_creator} do
+      # Accepted: non-creator redirected to match page
+      {:challenge_accepted, false} ->
+        {:ok,
+         socket
+         |> put_flash(:info, "Challenge accepted! The match has begun")
+         |> push_navigate(to: ~p"/matches/#{challenge.id}")}
+
+      # Cancelled: anyone redirected to dashboard
+      {:challenge_cancelled, _} ->
+        {:ok,
+         socket
+         |> put_flash(:info, "This challenge has been cancelled")
+         |> push_navigate(to: ~p"/dashboard")}
+
+      # Rejected: anyone redirected to dashboard
+      {:challenge_rejected, _} ->
+        {:ok,
+         socket
+         |> put_flash(:info, "This challenge has been declined")
+         |> push_navigate(to: ~p"/dashboard")}
+
+      # Any other case: redirect to waiting room
+      _ ->
+        {:ok,
+         socket
+         |> put_flash(:info, "Challenge status changed")
+         |> push_navigate(to: ~p"/challenges/#{challenge.id}/waiting_room")}
     end
   end
 end

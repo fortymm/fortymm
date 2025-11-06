@@ -205,7 +205,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
   end
 
   describe "Challenge creator access control" do
-    test "redirects non-creator user with error message", %{conn: conn} do
+    test "redirects non-creator user to show page", %{conn: conn} do
       creator = user_fixture()
       imposter = user_fixture()
 
@@ -217,8 +217,8 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
                |> log_in_user(imposter)
                |> live(~p"/challenges/#{challenge.id}/waiting_room")
 
-      assert path == ~p"/dashboard"
-      assert flash == %{"error" => "You are not authorized to view this challenge"}
+      assert path == ~p"/challenges/#{challenge.id}"
+      assert flash == %{"info" => "View the challenge details to accept or decline"}
     end
 
     test "allows creator to view their own challenge", %{conn: conn} do
@@ -248,7 +248,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
       assert flash == %{"error" => "Challenge not found"}
     end
 
-    test "multiple users cannot access each other's challenges", %{conn: conn} do
+    test "multiple users cannot access each other's waiting rooms", %{conn: conn} do
       user1 = user_fixture()
       user2 = user_fixture()
       user3 = user_fixture()
@@ -259,7 +259,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
       {:ok, challenge2} =
         Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: user2.id})
 
-      # User1 can access their own challenge
+      # User1 can access their own challenge waiting room
       {:ok, _lv, html1} =
         conn
         |> log_in_user(user1)
@@ -267,21 +267,21 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
 
       assert html1 =~ "Waiting for Opponent"
 
-      # User2 cannot access User1's challenge
+      # User2 cannot access User1's waiting room, redirected to show page
       assert {:error, {:live_redirect, %{to: path2}}} =
                conn
                |> log_in_user(user2)
                |> live(~p"/challenges/#{challenge1.id}/waiting_room")
 
-      assert path2 == ~p"/dashboard"
+      assert path2 == ~p"/challenges/#{challenge1.id}"
 
-      # User3 cannot access User2's challenge
+      # User3 cannot access User2's waiting room, redirected to show page
       assert {:error, {:live_redirect, %{to: path3}}} =
                conn
                |> log_in_user(user3)
                |> live(~p"/challenges/#{challenge2.id}/waiting_room")
 
-      assert path3 == ~p"/dashboard"
+      assert path3 == ~p"/challenges/#{challenge2.id}"
     end
 
     test "creator can cancel their own challenge", %{conn: conn} do
@@ -552,6 +552,235 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
       lv |> element("button[phx-click='cancel_challenge']") |> render_click()
 
       # Should redirect to dashboard on success
+      assert_redirect(lv, ~p"/dashboard")
+    end
+  end
+
+  describe "Accepted challenge routing on mount" do
+    test "creator viewing accepted challenge redirects to scoring page with flash", %{
+      conn: conn
+    } do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Accept the challenge
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+
+      # Creator tries to view the waiting room
+      assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
+               conn
+               |> log_in_user(creator)
+               |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      assert path == ~p"/matches/#{challenge.id}/games/1/scores/new"
+      assert flash == %{"info" => "Challenge accepted! Time to enter scores"}
+    end
+
+    test "non-creator viewing accepted challenge redirects to match page with flash", %{
+      conn: conn
+    } do
+      creator = user_fixture()
+      viewer = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+
+      # Accept the challenge
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+
+      # Non-creator tries to view the waiting room
+      assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
+               conn
+               |> log_in_user(viewer)
+               |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      assert path == ~p"/matches/#{challenge.id}"
+      assert flash == %{"info" => "Challenge accepted! The match has begun"}
+    end
+  end
+
+  describe "Cancelled challenge routing on mount" do
+    test "creator viewing cancelled challenge redirects to dashboard with flash", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Cancel the challenge
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
+
+      # Creator tries to view the waiting room
+      assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
+               conn
+               |> log_in_user(creator)
+               |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      assert path == ~p"/dashboard"
+      assert flash == %{"info" => "This challenge has been cancelled"}
+    end
+
+    test "non-creator viewing cancelled challenge redirects to dashboard with flash", %{
+      conn: conn
+    } do
+      creator = user_fixture()
+      viewer = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 7, rated: true, created_by_id: creator.id})
+
+      # Cancel the challenge
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
+
+      # Viewer tries to view the waiting room
+      assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
+               conn
+               |> log_in_user(viewer)
+               |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      assert path == ~p"/dashboard"
+      assert flash == %{"info" => "This challenge has been cancelled"}
+    end
+  end
+
+  describe "Rejected challenge routing on mount" do
+    test "creator viewing rejected challenge redirects to dashboard with flash", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Reject the challenge
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "rejected"})
+
+      # Creator tries to view the waiting room
+      assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
+               conn
+               |> log_in_user(creator)
+               |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      assert path == ~p"/dashboard"
+      assert flash == %{"info" => "This challenge has been declined"}
+    end
+
+    test "non-creator viewing rejected challenge redirects to dashboard with flash", %{
+      conn: conn
+    } do
+      creator = user_fixture()
+      viewer = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+
+      # Reject the challenge
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "rejected"})
+
+      # Viewer tries to view the waiting room
+      assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
+               conn
+               |> log_in_user(viewer)
+               |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      assert path == ~p"/dashboard"
+      assert flash == %{"info" => "This challenge has been declined"}
+    end
+  end
+
+  describe "Challenge status updates via PubSub on waiting room" do
+    test "creator viewing waiting room gets updated challenge when still pending", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Creator opens the waiting room
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # Update the challenge (but keep it pending)
+      {:ok, _updated_challenge} =
+        Matches.update_challenge(challenge.id, %{length_in_games: 5})
+
+      # Give PubSub a moment to deliver the message
+      Process.sleep(50)
+
+      # Verify the LiveView updated the challenge assign
+      html = render(lv)
+      assert html =~ "Best of 5"
+    end
+
+    test "creator on waiting room redirects to scoring when challenge is accepted", %{
+      conn: conn
+    } do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Creator opens the waiting room
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # Challenge is accepted by someone
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+
+      # Give PubSub a moment to deliver the message
+      Process.sleep(50)
+
+      # Creator should be redirected to scoring page
+      assert_redirect(lv, ~p"/matches/#{challenge.id}/games/1/scores/new")
+    end
+
+    test "creator on waiting room redirects to dashboard when challenge is cancelled", %{
+      conn: conn
+    } do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Creator opens the waiting room
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # Challenge is cancelled
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
+
+      # Give PubSub a moment to deliver the message
+      Process.sleep(50)
+
+      # Creator should be redirected to dashboard
+      assert_redirect(lv, ~p"/dashboard")
+    end
+
+    test "creator on waiting room redirects to dashboard when challenge is rejected", %{
+      conn: conn
+    } do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+
+      # Creator opens the waiting room
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # Challenge is rejected by someone
+      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "rejected"})
+
+      # Give PubSub a moment to deliver the message
+      Process.sleep(50)
+
+      # Creator should be redirected to dashboard
       assert_redirect(lv, ~p"/dashboard")
     end
   end

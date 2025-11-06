@@ -559,4 +559,82 @@ defmodule Fortymm.MatchesTest do
       refute_receive {:challenge_updated, %{id: ^challenge2_id}}, 100
     end
   end
+
+  describe "status/1" do
+    test "returns :challenge_pending for pending challenges" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+
+      assert Matches.status(challenge) == :challenge_pending
+    end
+
+    test "returns :challenge_accepted for accepted challenges" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 2})
+
+      {:ok, accepted_challenge} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+
+      assert Matches.status(accepted_challenge) == :challenge_accepted
+    end
+
+    test "returns :challenge_rejected for rejected challenges" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 7, rated: false, created_by_id: 3})
+
+      {:ok, rejected_challenge} = Matches.update_challenge(challenge.id, %{status: "rejected"})
+
+      assert Matches.status(rejected_challenge) == :challenge_rejected
+    end
+
+    test "returns :challenge_cancelled for cancelled challenges" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 1, rated: true, created_by_id: 4})
+
+      {:ok, cancelled_challenge} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
+
+      assert Matches.status(cancelled_challenge) == :challenge_cancelled
+    end
+
+    test "status changes as challenge is updated" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+
+      # Initially pending
+      assert Matches.status(challenge) == :challenge_pending
+
+      # Accept the challenge
+      {:ok, accepted} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+      assert Matches.status(accepted) == :challenge_accepted
+
+      # Retrieve from store and verify status
+      {:ok, retrieved} = Matches.get_challenge(challenge.id)
+      assert Matches.status(retrieved) == :challenge_accepted
+    end
+
+    test "status is independent of other challenge fields" do
+      {:ok, challenge1} =
+        Matches.create_challenge(%{length_in_games: 1, rated: true, created_by_id: 1})
+
+      {:ok, challenge2} =
+        Matches.create_challenge(%{length_in_games: 7, rated: false, created_by_id: 999})
+
+      {:ok, challenge3} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 42})
+
+      # All should start as pending regardless of other fields
+      assert Matches.status(challenge1) == :challenge_pending
+      assert Matches.status(challenge2) == :challenge_pending
+      assert Matches.status(challenge3) == :challenge_pending
+
+      # Update to different statuses
+      {:ok, accepted} = Matches.update_challenge(challenge1.id, %{status: "accepted"})
+      {:ok, rejected} = Matches.update_challenge(challenge2.id, %{status: "rejected"})
+      {:ok, cancelled} = Matches.update_challenge(challenge3.id, %{status: "cancelled"})
+
+      # Status should reflect the updates
+      assert Matches.status(accepted) == :challenge_accepted
+      assert Matches.status(rejected) == :challenge_rejected
+      assert Matches.status(cancelled) == :challenge_cancelled
+    end
+  end
 end

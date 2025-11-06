@@ -3,7 +3,7 @@ defmodule Fortymm.Matches do
   The Matches context.
   """
 
-  alias Fortymm.Matches.{Challenge, ChallengeStore, ChallengeUpdates}
+  alias Fortymm.Matches.{Challenge, ChallengeStore, ChallengeUpdates, Status}
 
   @doc """
   Creates a changeset for a Challenge.
@@ -129,6 +129,20 @@ defmodule Fortymm.Matches do
   """
   def delete_challenge(id) do
     ChallengeStore.delete(id)
+  end
+
+  @doc """
+  Returns the status of a challenge.
+
+  ## Examples
+
+      iex> {:ok, challenge} = get_challenge("valid-id")
+      iex> status(challenge)
+      :challenge_pending
+
+  """
+  def status(%Challenge{} = challenge) do
+    Status.for_challenge(challenge)
   end
 
   defp generate_id do
