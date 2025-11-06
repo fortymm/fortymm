@@ -8,14 +8,9 @@ defmodule FortymmWeb.DashboardLive do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="max-w-4xl mx-auto">
-        <.header>
-          Dashboard
-          <:subtitle>Welcome back, {@current_scope.user.username}! 👋</:subtitle>
-        </.header>
-
-        <div class="mt-8 grid gap-6">
+        <div class="grid gap-6">
           <%!-- Challenge a Friend Card --%>
-          <div class="card bg-gradient-to-br from-primary/20 to-secondary/20 shadow-xl border border-primary/30">
+          <div class="card border bg-primary/30 border-primary/30">
             <div class="card-body">
               <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="text-center sm:text-left">
@@ -23,14 +18,14 @@ defmodule FortymmWeb.DashboardLive do
                     <.icon name="hero-trophy" class="size-7 text-primary" /> Challenge a Friend
                   </h2>
                   <p class="text-base opacity-90">
-                    Ready to put your skills to the test? Invite a friend and see who comes out on top!
+                    Ready to put your skills to the test? Challenge a friend and see who comes out on top!
                   </p>
                 </div>
                 <button
                   class="btn btn-primary btn-lg gap-2 shadow-lg hover:shadow-xl transition-all"
                   onclick="challenge_modal.showModal()"
                 >
-                  <.icon name="hero-user-plus" class="size-5" /> Start Challenge
+                  <.icon name="hero-user-plus" class="size-5" /> Challenge a Friend
                 </button>
               </div>
             </div>
@@ -100,75 +95,60 @@ defmodule FortymmWeb.DashboardLive do
             <.form for={@form} phx-submit="create_challenge" id="challenge-form">
               <div class="space-y-6">
                 <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Match Length (Best of)</span>
-                  </label>
-                  <div class="grid grid-cols-2 gap-3">
-                    <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
+                  <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Match Length</legend>
+                    <div class="grid grid-cols-2 gap-3">
                       <input
+                        class="btn"
                         type="radio"
                         name="challenge[length_in_games]"
                         value="1"
-                        class="radio radio-primary"
+                        aria-label="Just One Game"
                       />
-                      <span class="label-text font-medium">Best of 1</span>
-                    </label>
-
-                    <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
                       <input
+                        class="btn"
                         type="radio"
                         name="challenge[length_in_games]"
                         value="3"
-                        class="radio radio-primary"
+                        aria-label="Best of 3"
                         checked
                       />
-                      <span class="label-text font-medium">Best of 3</span>
-                    </label>
-
-                    <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
                       <input
+                        class="btn"
                         type="radio"
                         name="challenge[length_in_games]"
                         value="5"
-                        class="radio radio-primary"
+                        aria-label="Best of 5"
                       />
-                      <span class="label-text font-medium">Best of 5</span>
-                    </label>
-
-                    <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
                       <input
+                        class="btn"
                         type="radio"
                         name="challenge[length_in_games]"
                         value="7"
-                        class="radio radio-primary"
+                        aria-label="Best of 7"
                       />
-                      <span class="label-text font-medium">Best of 7</span>
-                    </label>
-                  </div>
-                  <%= if @form[:length_in_games].errors != [] do %>
-                    <label class="label">
-                      <span class="label-text-alt text-error">
-                        {Enum.map(@form[:length_in_games].errors, fn {msg, _} -> msg end)
-                        |> Enum.join(", ")}
-                      </span>
-                    </label>
-                  <% end %>
+                    </div>
+                    <%= if @form[:length_in_games].errors != [] do %>
+                      <label class="label">
+                        <span class="label-text-alt text-error">
+                          {Enum.map(@form[:length_in_games].errors, fn {msg, _} -> msg end)
+                          |> Enum.join(", ")}
+                        </span>
+                      </label>
+                    <% end %>
+                  </fieldset>
                 </div>
 
                 <div>
-                  <label class="label cursor-pointer justify-start gap-3 p-4 border border-base-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all">
+                  <label class="label cursor-pointer justify-start gap-3">
                     <input
                       type="checkbox"
                       name="challenge[rated]"
                       value="true"
+                      checked="checked"
                       class="checkbox checkbox-primary"
                     />
-                    <div class="flex-1">
-                      <span class="label-text font-semibold block">Rated Match</span>
-                      <span class="label-text-alt text-base-content/60">
-                        This match will affect your rating
-                      </span>
-                    </div>
+                    <span class="label-text font-semibold">Rated</span>
                   </label>
                   <%= if @form[:rated].errors != [] do %>
                     <label class="label">
@@ -185,7 +165,7 @@ defmodule FortymmWeb.DashboardLive do
                   Cancel
                 </button>
                 <button type="submit" class="btn btn-primary gap-2">
-                  <.icon name="hero-paper-airplane" class="size-5" /> Send Challenge
+                  Create
                 </button>
               </div>
             </.form>
