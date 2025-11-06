@@ -2,6 +2,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
   use FortymmWeb, :live_view
 
   alias Fortymm.Matches
+  alias FortymmWeb.Presence
 
   @impl true
   def render(assigns) do
@@ -49,8 +50,21 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
               </div>
 
               <div class="flex justify-between items-center p-4 bg-base-100 rounded-lg">
-                <span class="font-semibold">Opponent:</span>
-                <span>Waiting...</span>
+                <span class="font-semibold">Viewers:</span>
+                <span>
+                  <%= if @viewers == [] do %>
+                    <span class="text-base-content/60">No one yet...</span>
+                  <% else %>
+                    <div class="flex flex-wrap gap-2 justify-end">
+                      <%= for viewer <- @viewers do %>
+                        <span class="badge badge-success gap-2">
+                          <.icon name="hero-eye" class="size-4" />
+                          {viewer}
+                        </span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </span>
               </div>
             </div>
 
@@ -88,9 +102,16 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
         current_user_id = socket.assigns.current_scope.user.id
 
         if challenge.created_by_id == current_user_id do
+          topic = "challenge:#{challenge.id}"
+
+          if connected?(socket) do
+            Phoenix.PubSub.subscribe(Fortymm.PubSub, topic)
+          end
+
           socket =
             socket
             |> assign(:challenge, challenge)
+            |> assign(:viewers, list_viewers(topic))
 
           {:ok, socket}
         else
@@ -109,6 +130,12 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
   end
 
   @impl true
+  def handle_info(%{event: "presence_diff"}, socket) do
+    topic = "challenge:#{socket.assigns.challenge.id}"
+    {:noreply, assign(socket, :viewers, list_viewers(topic))}
+  end
+
+  @impl true
   def handle_event("cancel_challenge", _params, socket) do
     Matches.delete_challenge(socket.assigns.challenge.id)
 
@@ -116,5 +143,11 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
      socket
      |> put_flash(:info, "Challenge cancelled")
      |> push_navigate(to: ~p"/dashboard")}
+  end
+
+  defp list_viewers(topic) do
+    topic
+    |> Presence.list()
+    |> Enum.map(fn {_user_id, %{metas: [meta | _]}} -> meta.username end)
   end
 end

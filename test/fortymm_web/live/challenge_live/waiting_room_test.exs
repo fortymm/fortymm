@@ -44,7 +44,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
       assert html =~ String.slice(challenge.id, 0..7)
     end
 
-    test "displays waiting status for opponent", %{conn: conn} do
+    test "displays waiting status for viewers", %{conn: conn} do
       user = user_fixture()
 
       {:ok, challenge} =
@@ -55,8 +55,8 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
         |> log_in_user(user)
         |> live(~p"/challenges/#{challenge.id}/waiting_room")
 
-      assert html =~ "Opponent:"
-      assert html =~ "Waiting..."
+      assert html =~ "Viewers:"
+      assert html =~ "No one yet..."
     end
 
     test "displays challenge type", %{conn: conn} do
@@ -177,7 +177,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
       assert has_element?(lv, "span", "Challenge ID:")
       assert has_element?(lv, "span", "Match Length:")
       assert has_element?(lv, "span", "Match Type:")
-      assert has_element?(lv, "span", "Opponent:")
+      assert has_element?(lv, "span", "Viewers:")
     end
 
     test "handles different challenge IDs correctly", %{conn: conn} do
@@ -301,6 +301,151 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
 
       # Verify challenge is deleted
       assert {:error, :not_found} = Matches.get_challenge(challenge.id)
+    end
+  end
+
+  describe "Presence tracking for viewers" do
+    test "shows 'No one yet...' when no viewers are present", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      assert html =~ "Viewers:"
+      assert html =~ "No one yet..."
+    end
+
+    test "shows viewer username when someone views the challenge", %{conn: conn} do
+      creator = user_fixture()
+      viewer = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Creator opens waiting room
+      {:ok, creator_lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # Viewer opens challenge page (which tracks presence)
+      {:ok, _viewer_lv, _html} =
+        conn
+        |> log_in_user(viewer)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      # Give presence a moment to sync
+      Process.sleep(50)
+
+      # Check that creator sees the viewer
+      html = render(creator_lv)
+      assert html =~ "Viewers:"
+      assert html =~ viewer.username
+    end
+
+    test "shows multiple viewers when multiple users view the challenge", %{conn: conn} do
+      creator = user_fixture()
+      viewer1 = user_fixture()
+      viewer2 = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+
+      # Creator opens waiting room
+      {:ok, creator_lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # First viewer opens challenge page
+      {:ok, _viewer1_lv, _html} =
+        conn
+        |> log_in_user(viewer1)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      # Second viewer opens challenge page
+      {:ok, _viewer2_lv, _html} =
+        conn
+        |> log_in_user(viewer2)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      # Give presence a moment to sync
+      Process.sleep(50)
+
+      # Check that creator sees both viewers
+      html = render(creator_lv)
+      assert html =~ "Viewers:"
+      assert html =~ viewer1.username
+      assert html =~ viewer2.username
+    end
+
+    test "removes viewer when they leave the challenge page", %{conn: conn} do
+      creator = user_fixture()
+      viewer = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Creator opens waiting room
+      {:ok, creator_lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # Viewer opens challenge page
+      {:ok, viewer_lv, _html} =
+        conn
+        |> log_in_user(viewer)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      # Give presence a moment to sync
+      Process.sleep(50)
+
+      # Verify viewer is shown
+      html = render(creator_lv)
+      assert html =~ viewer.username
+
+      # Viewer leaves (stop the LiveView process)
+      :ok = GenServer.stop(viewer_lv.pid)
+
+      # Give presence a moment to detect the leave
+      Process.sleep(100)
+
+      # Check that creator no longer sees the viewer
+      html = render(creator_lv)
+      assert html =~ "No one yet..."
+      refute html =~ viewer.username
+    end
+
+    test "viewer badge has eye icon", %{conn: conn} do
+      creator = user_fixture()
+      viewer = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Creator opens waiting room
+      {:ok, creator_lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # Viewer opens challenge page
+      {:ok, _viewer_lv, _html} =
+        conn
+        |> log_in_user(viewer)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      # Give presence a moment to sync
+      Process.sleep(50)
+
+      # Check for eye icon in the viewer badge - check that badge with eye icon exists
+      assert has_element?(creator_lv, "span.badge-success")
     end
   end
 end

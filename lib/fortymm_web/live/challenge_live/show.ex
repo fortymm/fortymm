@@ -2,6 +2,7 @@ defmodule FortymmWeb.ChallengeLive.Show do
   use FortymmWeb, :live_view
 
   alias Fortymm.Matches
+  alias FortymmWeb.Presence
 
   @impl true
   def render(assigns) do
@@ -100,15 +101,27 @@ defmodule FortymmWeb.ChallengeLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     case Matches.get_challenge(id) do
       {:ok, challenge} ->
-        current_user_id = socket.assigns.current_scope.user.id
+        current_user = socket.assigns.current_scope.user
 
         # If the user is the creator, redirect them to the waiting room
-        if challenge.created_by_id == current_user_id do
+        if challenge.created_by_id == current_user.id do
           {:ok,
            socket
            |> push_navigate(to: ~p"/challenges/#{challenge.id}/waiting_room")}
         else
-          # Otherwise, show the challenge details
+          # Otherwise, show the challenge details and track presence
+          topic = "challenge:#{challenge.id}"
+
+          if connected?(socket) do
+            Phoenix.PubSub.subscribe(Fortymm.PubSub, topic)
+
+            {:ok, _} =
+              Presence.track(self(), topic, current_user.id, %{
+                username: current_user.username,
+                joined_at: System.system_time(:second)
+              })
+          end
+
           socket =
             socket
             |> assign(:challenge, challenge)
