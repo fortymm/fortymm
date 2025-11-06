@@ -3,7 +3,7 @@ defmodule Fortymm.Matches do
   The Matches context.
   """
 
-  alias Fortymm.Matches.{Challenge, ChallengeStore}
+  alias Fortymm.Matches.{Challenge, ChallengeStore, ChallengeUpdates}
 
   @doc """
   Creates a changeset for a Challenge.
@@ -44,6 +44,7 @@ defmodule Fortymm.Matches do
       challenge_with_id = %{challenge | id: generate_id()}
 
       ChallengeStore.insert(challenge_with_id.id, challenge_with_id)
+      ChallengeUpdates.broadcast(challenge_with_id)
       {:ok, challenge_with_id}
     else
       {:error, changeset}
@@ -80,6 +81,41 @@ defmodule Fortymm.Matches do
   """
   def list_challenges do
     ChallengeStore.list_all()
+  end
+
+  @doc """
+  Updates a challenge by ID in ETS.
+
+  Returns `{:ok, challenge}` if the challenge exists and update is valid.
+  Returns `{:error, :not_found}` if the challenge doesn't exist.
+  Returns `{:error, changeset}` if the update is invalid.
+
+  ## Examples
+
+      iex> update_challenge("valid-id", %{status: "accepted"})
+      {:ok, %Challenge{}}
+
+      iex> update_challenge("invalid-id", %{status: "accepted"})
+      {:error, :not_found}
+
+  """
+  def update_challenge(id, attrs) do
+    case get_challenge(id) do
+      {:ok, challenge} ->
+        changeset = Challenge.changeset(challenge, attrs)
+
+        if changeset.valid? do
+          updated_challenge = Ecto.Changeset.apply_changes(changeset)
+          ChallengeStore.insert(id, updated_challenge)
+          ChallengeUpdates.broadcast(updated_challenge)
+          {:ok, updated_challenge}
+        else
+          {:error, changeset}
+        end
+
+      {:error, :not_found} = error ->
+        error
+    end
   end
 
   @doc """

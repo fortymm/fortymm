@@ -253,4 +253,264 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       assert_redirect(lv, ~p"/dashboard")
     end
   end
+
+  describe "Challenge status updates" do
+    test "accepting challenge updates status to accepted", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      assert challenge.status == "pending"
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='accept_challenge']") |> render_click()
+
+      assert_redirect(lv, ~p"/dashboard")
+
+      # Verify challenge status is updated to accepted
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.status == "accepted"
+    end
+
+    test "declining challenge updates status to rejected", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+
+      assert challenge.status == "pending"
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='decline_challenge']") |> render_click()
+
+      assert_redirect(lv, ~p"/dashboard")
+
+      # Verify challenge status is updated to rejected
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.status == "rejected"
+    end
+
+    test "accepting challenge broadcasts status update", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Subscribe to challenge updates
+      Fortymm.Matches.ChallengeUpdates.subscribe(challenge.id)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='accept_challenge']") |> render_click()
+
+      # Verify broadcast was sent
+      assert_receive {:challenge_updated, updated_challenge}
+      assert updated_challenge.id == challenge.id
+      assert updated_challenge.status == "accepted"
+    end
+
+    test "declining challenge broadcasts status update", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: false, created_by_id: creator.id})
+
+      # Subscribe to challenge updates
+      Fortymm.Matches.ChallengeUpdates.subscribe(challenge.id)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='decline_challenge']") |> render_click()
+
+      # Verify broadcast was sent
+      assert_receive {:challenge_updated, updated_challenge}
+      assert updated_challenge.id == challenge.id
+      assert updated_challenge.status == "rejected"
+    end
+
+    test "challenge remains accessible after acceptance", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 7, rated: true, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='accept_challenge']") |> render_click()
+
+      # Challenge should still be accessible via get_challenge
+      {:ok, accepted_challenge} = Matches.get_challenge(challenge.id)
+      assert accepted_challenge.id == challenge.id
+      assert accepted_challenge.status == "accepted"
+      assert accepted_challenge.length_in_games == 7
+      assert accepted_challenge.rated == true
+    end
+
+    test "challenge remains accessible after rejection", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 1, rated: false, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='decline_challenge']") |> render_click()
+
+      # Challenge should still be accessible via get_challenge
+      {:ok, rejected_challenge} = Matches.get_challenge(challenge.id)
+      assert rejected_challenge.id == challenge.id
+      assert rejected_challenge.status == "rejected"
+      assert rejected_challenge.length_in_games == 1
+      assert rejected_challenge.rated == false
+    end
+
+    test "only status field is updated on acceptance", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='accept_challenge']") |> render_click()
+
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.status == "accepted"
+      assert updated_challenge.length_in_games == challenge.length_in_games
+      assert updated_challenge.rated == challenge.rated
+      assert updated_challenge.created_by_id == challenge.created_by_id
+    end
+
+    test "only status field is updated on rejection", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='decline_challenge']") |> render_click()
+
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.status == "rejected"
+      assert updated_challenge.length_in_games == challenge.length_in_games
+      assert updated_challenge.rated == challenge.rated
+      assert updated_challenge.created_by_id == challenge.created_by_id
+    end
+  end
+
+  describe "Challenge error handling" do
+    test "accepting non-existent challenge redirects to dashboard", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      # Delete the challenge to simulate it being removed
+      Matches.delete_challenge(challenge.id)
+
+      lv |> element("button[phx-click='accept_challenge']") |> render_click()
+
+      # Should redirect to dashboard when challenge not found
+      assert_redirect(lv, ~p"/dashboard")
+    end
+
+    test "declining non-existent challenge redirects to dashboard", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      # Delete the challenge to simulate it being removed
+      Matches.delete_challenge(challenge.id)
+
+      lv |> element("button[phx-click='decline_challenge']") |> render_click()
+
+      # Should redirect to dashboard when challenge not found
+      assert_redirect(lv, ~p"/dashboard")
+    end
+
+    test "accepting challenge redirects to dashboard on success", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='accept_challenge']") |> render_click()
+
+      # Should redirect to dashboard on success
+      assert_redirect(lv, ~p"/dashboard")
+    end
+
+    test "declining challenge redirects to dashboard on success", %{conn: conn} do
+      creator = user_fixture()
+      acceptor = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(acceptor)
+        |> live(~p"/challenges/#{challenge.id}")
+
+      lv |> element("button[phx-click='decline_challenge']") |> render_click()
+
+      # Should redirect to dashboard on success
+      assert_redirect(lv, ~p"/dashboard")
+    end
+  end
 end
