@@ -7,11 +7,13 @@ defmodule Fortymm.Matches.Challenge do
   import Ecto.Changeset
 
   @valid_lengths [1, 3, 5, 7]
+  @valid_statuses ["pending", "accepted", "rejected", "cancelled"]
 
   embedded_schema do
     field :length_in_games, :integer
     field :rated, :boolean, default: false
     field :created_by_id, :integer
+    field :status, :string, default: "pending"
   end
 
   @doc """
@@ -28,10 +30,13 @@ defmodule Fortymm.Matches.Challenge do
   """
   def changeset(challenge, attrs) do
     challenge
-    |> cast(attrs, [:length_in_games, :rated, :created_by_id])
+    |> cast(attrs, [:length_in_games, :rated, :created_by_id, :status])
     |> validate_required([:length_in_games, :created_by_id])
     |> validate_inclusion(:length_in_games, @valid_lengths,
       message: "must be one of: #{Enum.join(@valid_lengths, ", ")}"
+    )
+    |> validate_inclusion(:status, @valid_statuses,
+      message: "must be one of: #{Enum.join(@valid_statuses, ", ")}"
     )
   end
 end

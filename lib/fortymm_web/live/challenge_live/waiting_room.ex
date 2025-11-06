@@ -137,12 +137,24 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
 
   @impl true
   def handle_event("cancel_challenge", _params, socket) do
-    Matches.delete_challenge(socket.assigns.challenge.id)
+    case Matches.update_challenge(socket.assigns.challenge.id, %{status: "cancelled"}) do
+      {:ok, _challenge} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Challenge cancelled")
+         |> push_navigate(to: ~p"/dashboard")}
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Challenge cancelled")
-     |> push_navigate(to: ~p"/dashboard")}
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Challenge not found.")
+         |> push_navigate(to: ~p"/dashboard")}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to cancel challenge. Please try again.")}
+    end
   end
 
   defp list_viewers(topic) do

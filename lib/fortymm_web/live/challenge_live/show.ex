@@ -139,19 +139,45 @@ defmodule FortymmWeb.ChallengeLive.Show do
 
   @impl true
   def handle_event("accept_challenge", _params, socket) do
-    # TODO: Implement challenge acceptance logic
-    # For now, just show a flash message
-    {:noreply,
-     socket
-     |> put_flash(:info, "Challenge acceptance coming soon!")
-     |> push_navigate(to: ~p"/dashboard")}
+    case Matches.update_challenge(socket.assigns.challenge.id, %{status: "accepted"}) do
+      {:ok, _challenge} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Challenge accepted!")
+         |> push_navigate(to: ~p"/dashboard")}
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Challenge not found.")
+         |> push_navigate(to: ~p"/dashboard")}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to accept challenge. Please try again.")}
+    end
   end
 
   @impl true
   def handle_event("decline_challenge", _params, socket) do
-    {:noreply,
-     socket
-     |> put_flash(:info, "Challenge declined")
-     |> push_navigate(to: ~p"/dashboard")}
+    case Matches.update_challenge(socket.assigns.challenge.id, %{status: "rejected"}) do
+      {:ok, _challenge} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Challenge declined")
+         |> push_navigate(to: ~p"/dashboard")}
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Challenge not found.")
+         |> push_navigate(to: ~p"/dashboard")}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to decline challenge. Please try again.")}
+    end
   end
 end

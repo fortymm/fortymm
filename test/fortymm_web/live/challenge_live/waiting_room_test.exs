@@ -299,8 +299,76 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
 
       assert_redirect(lv, ~p"/dashboard")
 
-      # Verify challenge is deleted
-      assert {:error, :not_found} = Matches.get_challenge(challenge.id)
+      # Verify challenge status is updated to cancelled
+      {:ok, cancelled_challenge} = Matches.get_challenge(challenge.id)
+      assert cancelled_challenge.status == "cancelled"
+    end
+  end
+
+  describe "Challenge status updates" do
+    test "canceling challenge updates status to cancelled", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      assert challenge.status == "pending"
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      lv |> element("button[phx-click='cancel_challenge']") |> render_click()
+
+      assert_redirect(lv, ~p"/dashboard")
+
+      # Verify challenge status is updated to cancelled
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.status == "cancelled"
+    end
+
+    test "canceling challenge broadcasts status update", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      # Subscribe to challenge updates
+      Fortymm.Matches.ChallengeUpdates.subscribe(challenge.id)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      lv |> element("button[phx-click='cancel_challenge']") |> render_click()
+
+      # Verify broadcast was sent
+      assert_receive {:challenge_updated, updated_challenge}
+      assert updated_challenge.id == challenge.id
+      assert updated_challenge.status == "cancelled"
+    end
+
+    test "challenge remains accessible after cancellation", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      lv |> element("button[phx-click='cancel_challenge']") |> render_click()
+
+      # Challenge should still be accessible via get_challenge
+      {:ok, cancelled_challenge} = Matches.get_challenge(challenge.id)
+      assert cancelled_challenge.id == challenge.id
+      assert cancelled_challenge.status == "cancelled"
+      assert cancelled_challenge.length_in_games == 5
+      assert cancelled_challenge.rated == true
     end
   end
 
@@ -446,6 +514,45 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
 
       # Check for eye icon in the viewer badge - check that badge with eye icon exists
       assert has_element?(creator_lv, "span.badge-success")
+    end
+  end
+
+  describe "Challenge error handling" do
+    test "canceling non-existent challenge redirects to dashboard", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      # Delete the challenge to simulate it being removed
+      Matches.delete_challenge(challenge.id)
+
+      lv |> element("button[phx-click='cancel_challenge']") |> render_click()
+
+      # Should redirect to dashboard when challenge not found
+      assert_redirect(lv, ~p"/dashboard")
+    end
+
+    test "canceling challenge redirects to dashboard on success", %{conn: conn} do
+      creator = user_fixture()
+
+      {:ok, challenge} =
+        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(creator)
+        |> live(~p"/challenges/#{challenge.id}/waiting_room")
+
+      lv |> element("button[phx-click='cancel_challenge']") |> render_click()
+
+      # Should redirect to dashboard on success
+      assert_redirect(lv, ~p"/dashboard")
     end
   end
 end
