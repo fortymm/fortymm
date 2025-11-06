@@ -55,6 +55,7 @@ defmodule FortymmWeb.Router do
       live "/dashboard", DashboardLive, :index
       live "/challenges/:id", ChallengeLive.Show, :show
       live "/challenges/:id/waiting_room", ChallengeLive.WaitingRoom, :show
+      live "/matches/:id", MatchLive.Show, :show
       live "/matches/:match_id/games/:id/scores/new", MatchLive.ScoreEntry, :new
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
