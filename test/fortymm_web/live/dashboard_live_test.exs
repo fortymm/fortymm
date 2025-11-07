@@ -113,14 +113,30 @@ defmodule FortymmWeb.DashboardLiveTest do
         |> live(~p"/dashboard")
 
       # Check for length_in_games radio buttons
-      assert has_element?(lv, "input[name='challenge[length_in_games]'][value='1']")
-      assert has_element?(lv, "input[name='challenge[length_in_games]'][value='3']")
-      assert has_element?(lv, "input[name='challenge[length_in_games]'][value='5']")
-      assert has_element?(lv, "input[name='challenge[length_in_games]'][value='7']")
+      assert has_element?(
+               lv,
+               "input[name='challenge[configuration][length_in_games]'][value='1']"
+             )
+
+      assert has_element?(
+               lv,
+               "input[name='challenge[configuration][length_in_games]'][value='3']"
+             )
+
+      assert has_element?(
+               lv,
+               "input[name='challenge[configuration][length_in_games]'][value='5']"
+             )
+
+      assert has_element?(
+               lv,
+               "input[name='challenge[configuration][length_in_games]'][value='7']"
+             )
+
       assert has_element?(lv, "legend", "Match Length")
 
       # Check for rated checkbox
-      assert has_element?(lv, "input[name='challenge[rated]'][type='checkbox']")
+      assert has_element?(lv, "input[name='challenge[configuration][rated]'][type='checkbox']")
       assert has_element?(lv, "label", "Rated")
 
       # Check for submit button
@@ -153,8 +169,10 @@ defmodule FortymmWeb.DashboardLiveTest do
         lv
         |> form("#challenge-form", %{
           "challenge" => %{
-            "length_in_games" => "3",
-            "rated" => "true"
+            "configuration" => %{
+              "length_in_games" => "3",
+              "rated" => "true"
+            }
           }
         })
         |> render_submit()
@@ -176,7 +194,9 @@ defmodule FortymmWeb.DashboardLiveTest do
         lv
         |> form("#challenge-form", %{
           "challenge" => %{
-            "length_in_games" => "5"
+            "configuration" => %{
+              "length_in_games" => "5"
+            }
           }
         })
         |> render_submit()
@@ -198,7 +218,7 @@ defmodule FortymmWeb.DashboardLiveTest do
       {:error, {:live_redirect, %{to: path1}}} =
         lv1
         |> form("#challenge-form", %{
-          "challenge" => %{"length_in_games" => "3"}
+          "challenge" => %{"configuration" => %{"length_in_games" => "3"}}
         })
         |> render_submit()
 
@@ -211,7 +231,7 @@ defmodule FortymmWeb.DashboardLiveTest do
       {:error, {:live_redirect, %{to: path2}}} =
         lv2
         |> form("#challenge-form", %{
-          "challenge" => %{"length_in_games" => "7"}
+          "challenge" => %{"configuration" => %{"length_in_games" => "7"}}
         })
         |> render_submit()
 

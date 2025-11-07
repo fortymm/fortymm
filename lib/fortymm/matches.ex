@@ -10,10 +10,10 @@ defmodule Fortymm.Matches do
 
   ## Examples
 
-      iex> challenge_changeset(%{length_in_games: 3})
+      iex> challenge_changeset(%{configuration: %{length_in_games: 3}})
       %Ecto.Changeset{valid?: true}
 
-      iex> challenge_changeset(%{length_in_games: 2})
+      iex> challenge_changeset(%{configuration: %{length_in_games: 2}})
       %Ecto.Changeset{valid?: false}
 
   """
@@ -29,10 +29,10 @@ defmodule Fortymm.Matches do
 
   ## Examples
 
-      iex> create_challenge(%{length_in_games: 3})
-      {:ok, %Challenge{id: "...", length_in_games: 3}}
+      iex> create_challenge(%{configuration: %{length_in_games: 3}})
+      {:ok, %Challenge{id: "...", configuration: %{length_in_games: 3}}}
 
-      iex> create_challenge(%{length_in_games: 2})
+      iex> create_challenge(%{configuration: %{length_in_games: 2}})
       {:error, %Ecto.Changeset{}}
 
   """

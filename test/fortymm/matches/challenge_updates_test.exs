@@ -1,7 +1,7 @@
 defmodule Fortymm.Matches.ChallengeUpdatesTest do
   use ExUnit.Case, async: true
 
-  alias Fortymm.Matches.{Challenge, ChallengeUpdates}
+  alias Fortymm.Matches.{Challenge, ChallengeUpdates, Configuration}
 
   describe "subscribe/1" do
     test "subscribes to challenge updates" do
@@ -20,8 +20,7 @@ defmodule Fortymm.Matches.ChallengeUpdatesTest do
     test "broadcasts challenge update to subscribers" do
       challenge = %Challenge{
         id: "broadcast123",
-        length_in_games: 3,
-        rated: false,
+        configuration: %Configuration{length_in_games: 3, rated: false},
         created_by_id: 1,
         status: "pending"
       }
@@ -35,8 +34,7 @@ defmodule Fortymm.Matches.ChallengeUpdatesTest do
     test "only subscribers receive the broadcast" do
       challenge = %Challenge{
         id: "broadcast456",
-        length_in_games: 5,
-        rated: true,
+        configuration: %Configuration{length_in_games: 5, rated: true},
         created_by_id: 2,
         status: "accepted"
       }
@@ -50,8 +48,7 @@ defmodule Fortymm.Matches.ChallengeUpdatesTest do
     test "broadcasts to multiple subscribers" do
       challenge = %Challenge{
         id: "broadcast789",
-        length_in_games: 7,
-        rated: false,
+        configuration: %Configuration{length_in_games: 7, rated: false},
         created_by_id: 3,
         status: "rejected"
       }
@@ -87,16 +84,14 @@ defmodule Fortymm.Matches.ChallengeUpdatesTest do
     test "does not broadcast to subscribers of different challenges" do
       challenge1 = %Challenge{
         id: "challenge1",
-        length_in_games: 3,
-        rated: false,
+        configuration: %Configuration{length_in_games: 3, rated: false},
         created_by_id: 1,
         status: "pending"
       }
 
       challenge2 = %Challenge{
         id: "challenge2",
-        length_in_games: 5,
-        rated: true,
+        configuration: %Configuration{length_in_games: 5, rated: true},
         created_by_id: 2,
         status: "accepted"
       }
@@ -114,8 +109,7 @@ defmodule Fortymm.Matches.ChallengeUpdatesTest do
     test "broadcasts include all challenge fields" do
       challenge = %Challenge{
         id: "full_challenge",
-        length_in_games: 5,
-        rated: true,
+        configuration: %Configuration{length_in_games: 5, rated: true},
         created_by_id: 42,
         status: "accepted"
       }
@@ -125,8 +119,8 @@ defmodule Fortymm.Matches.ChallengeUpdatesTest do
 
       assert_receive {:challenge_updated, received_challenge}
       assert received_challenge.id == "full_challenge"
-      assert received_challenge.length_in_games == 5
-      assert received_challenge.rated == true
+      assert received_challenge.configuration.length_in_games == 5
+      assert received_challenge.configuration.rated == true
       assert received_challenge.created_by_id == 42
       assert received_challenge.status == "accepted"
     end

@@ -18,7 +18,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, _lv, html} =
         conn
@@ -34,7 +37,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       {:ok, _lv, html} =
         conn
@@ -50,7 +56,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 7, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, _lv, html} =
         conn
@@ -66,7 +75,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: true},
+          created_by_id: creator.id
+        })
 
       {:ok, _lv, html} =
         conn
@@ -82,7 +94,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 1, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 1, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, _lv, html} =
         conn
@@ -98,7 +113,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -113,7 +131,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -127,7 +148,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       creator = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       assert {:error, redirect} = live(conn, ~p"/challenges/#{challenge.id}")
 
@@ -154,7 +178,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       creator = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       assert {:error, {:live_redirect, %{to: path}}} =
                conn
@@ -169,7 +196,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       {:ok, _lv, html} =
         conn
@@ -186,7 +216,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       user2 = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, _lv, html1} =
         conn
@@ -209,7 +242,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -226,7 +262,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -245,7 +284,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       assert challenge.status == "pending"
 
@@ -268,7 +310,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       assert challenge.status == "pending"
 
@@ -291,7 +336,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       # Subscribe to challenge updates
       Fortymm.Matches.ChallengeUpdates.subscribe(challenge.id)
@@ -314,7 +362,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: false},
+          created_by_id: creator.id
+        })
 
       # Subscribe to challenge updates
       Fortymm.Matches.ChallengeUpdates.subscribe(challenge.id)
@@ -337,7 +388,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 7, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: true},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -350,8 +404,8 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       {:ok, accepted_challenge} = Matches.get_challenge(challenge.id)
       assert accepted_challenge.id == challenge.id
       assert accepted_challenge.status == "accepted"
-      assert accepted_challenge.length_in_games == 7
-      assert accepted_challenge.rated == true
+      assert accepted_challenge.configuration.length_in_games == 7
+      assert accepted_challenge.configuration.rated == true
     end
 
     test "challenge remains accessible after rejection", %{conn: conn} do
@@ -359,7 +413,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 1, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 1, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -372,8 +429,8 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       {:ok, rejected_challenge} = Matches.get_challenge(challenge.id)
       assert rejected_challenge.id == challenge.id
       assert rejected_challenge.status == "rejected"
-      assert rejected_challenge.length_in_games == 1
-      assert rejected_challenge.rated == false
+      assert rejected_challenge.configuration.length_in_games == 1
+      assert rejected_challenge.configuration.rated == false
     end
 
     test "only status field is updated on acceptance", %{conn: conn} do
@@ -381,7 +438,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -392,8 +452,11 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
 
       {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
       assert updated_challenge.status == "accepted"
-      assert updated_challenge.length_in_games == challenge.length_in_games
-      assert updated_challenge.rated == challenge.rated
+
+      assert updated_challenge.configuration.length_in_games ==
+               challenge.configuration.length_in_games
+
+      assert updated_challenge.configuration.rated == challenge.configuration.rated
       assert updated_challenge.created_by_id == challenge.created_by_id
     end
 
@@ -402,7 +465,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -413,8 +479,11 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
 
       {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
       assert updated_challenge.status == "rejected"
-      assert updated_challenge.length_in_games == challenge.length_in_games
-      assert updated_challenge.rated == challenge.rated
+
+      assert updated_challenge.configuration.length_in_games ==
+               challenge.configuration.length_in_games
+
+      assert updated_challenge.configuration.rated == challenge.configuration.rated
       assert updated_challenge.created_by_id == challenge.created_by_id
     end
   end
@@ -425,7 +494,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -446,7 +518,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -467,7 +542,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -485,7 +563,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       {:ok, lv, _html} =
         conn
@@ -506,7 +587,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       creator = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       # Accept the challenge
       {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
@@ -528,7 +612,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       # Accept the challenge
       {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
@@ -549,7 +636,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       creator = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       # Cancel the challenge
       {:ok, _} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
@@ -571,7 +661,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       viewer = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 7, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: true},
+          created_by_id: creator.id
+        })
 
       # Cancel the challenge
       {:ok, _} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
@@ -592,7 +685,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       creator = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       # Reject the challenge
       {:ok, _} = Matches.update_challenge(challenge.id, %{status: "rejected"})
@@ -614,7 +710,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       viewer = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       # Reject the challenge
       {:ok, _} = Matches.update_challenge(challenge.id, %{status: "rejected"})
@@ -638,7 +737,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       viewer = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       # Viewer opens the show page
       {:ok, lv, _html} =
@@ -648,7 +750,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
 
       # Update the challenge (but keep it pending)
       {:ok, _updated_challenge} =
-        Matches.update_challenge(challenge.id, %{length_in_games: 5})
+        Matches.update_challenge(challenge.id, %{configuration: %{length_in_games: 5}})
 
       # Give PubSub a moment to deliver the message
       Process.sleep(50)
@@ -663,7 +765,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       acceptor = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       # For this test, we need to mount the creator on the waiting room first
       # then have them somehow end up on the show page (which normally wouldn't happen,
@@ -694,7 +799,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       viewer = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       # Viewer opens the show page
       {:ok, lv, _html} =
@@ -719,7 +827,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       viewer = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       # Viewer is on the show page
       {:ok, lv, _html} =
@@ -744,7 +855,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       viewer = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 7, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: true},
+          created_by_id: creator.id
+        })
 
       # Viewer opens the show page
       {:ok, lv, _html} =
@@ -769,7 +883,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       viewer = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: creator.id
+        })
 
       # Viewer is on the show page
       {:ok, lv, _html} =
@@ -794,7 +911,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       viewer = user_fixture()
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: creator.id})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: creator.id
+        })
 
       # Viewer opens the show page
       {:ok, lv, _html} =
