@@ -718,6 +718,145 @@ defmodule Fortymm.MatchesTest do
     end
   end
 
+  describe "accept_challenge/2" do
+    test "accepts a valid pending challenge" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      assert {:ok, accepted_challenge} = Matches.accept_challenge(challenge.id, 2)
+      assert accepted_challenge.status == "accepted"
+      assert accepted_challenge.id == challenge.id
+      assert accepted_challenge.created_by_id == 1
+    end
+
+    test "returns error when challenge does not exist" do
+      assert {:error, :not_found} = Matches.accept_challenge("nonexistent-id", 2)
+    end
+
+    test "returns error when acceptor is the same as creator" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      assert {:error, changeset} = Matches.accept_challenge(challenge.id, 1)
+      refute changeset.valid?
+
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert Map.has_key?(errors, :acceptor_id)
+      assert "cannot accept your own challenge" in errors.acceptor_id
+    end
+
+    test "returns error when challenge is already accepted" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      {:ok, _accepted} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+
+      assert {:error, changeset} = Matches.accept_challenge(challenge.id, 2)
+      refute changeset.valid?
+
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert Map.has_key?(errors, :challenge)
+      assert "must be pending, but is accepted" in errors.challenge
+    end
+
+    test "returns error when challenge is rejected" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      {:ok, _rejected} = Matches.update_challenge(challenge.id, %{status: "rejected"})
+
+      assert {:error, changeset} = Matches.accept_challenge(challenge.id, 2)
+      refute changeset.valid?
+
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert "must be pending, but is rejected" in errors.challenge
+    end
+
+    test "returns error when challenge is cancelled" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      {:ok, _cancelled} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
+
+      assert {:error, changeset} = Matches.accept_challenge(challenge.id, 2)
+      refute changeset.valid?
+
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert "must be pending, but is cancelled" in errors.challenge
+    end
+
+    test "broadcasts when challenge is accepted" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      ChallengeUpdates.subscribe(challenge.id)
+
+      {:ok, _accepted} = Matches.accept_challenge(challenge.id, 2)
+
+      assert_receive {:challenge_updated, received}
+      assert received.id == challenge.id
+      assert received.status == "accepted"
+    end
+
+    test "accepts challenge with different user IDs" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 999
+        })
+
+      assert {:ok, accepted} = Matches.accept_challenge(challenge.id, 1000)
+      assert accepted.status == "accepted"
+      assert accepted.created_by_id == 999
+    end
+
+    test "persists acceptance in ETS" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: false},
+          created_by_id: 5
+        })
+
+      {:ok, _accepted} = Matches.accept_challenge(challenge.id, 10)
+
+      {:ok, retrieved} = Matches.get_challenge(challenge.id)
+      assert retrieved.status == "accepted"
+    end
+
+    test "does not modify other challenge fields" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 42
+        })
+
+      {:ok, accepted} = Matches.accept_challenge(challenge.id, 100)
+
+      assert accepted.status == "accepted"
+      assert accepted.configuration.length_in_games == 5
+      assert accepted.configuration.rated == true
+      assert accepted.created_by_id == 42
+    end
+  end
+
   describe "status/1" do
     test "returns :challenge_pending for pending challenges" do
       {:ok, challenge} =
