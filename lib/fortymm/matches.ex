@@ -6,6 +6,7 @@ defmodule Fortymm.Matches do
   alias Fortymm.Matches.{
     Challenge,
     ChallengeAcceptance,
+    ChallengeCancellation,
     ChallengeRejection,
     ChallengeStore,
     ChallengeUpdates,
@@ -227,6 +228,47 @@ defmodule Fortymm.Matches do
           update_challenge(challenge_id, %{status: "rejected"})
         else
           {:error, rejection_changeset}
+        end
+
+      {:error, :not_found} = error ->
+        error
+    end
+  end
+
+  @doc """
+  Cancels a challenge after validating cancellation rules.
+
+  Validates that:
+  - The challenge exists
+  - The challenge is in "pending" status
+  - The cancellor is the same as the challenge creator
+
+  Returns `{:ok, challenge}` if validation passes and the challenge is cancelled.
+  Returns `{:error, :not_found}` if the challenge doesn't exist.
+  Returns `{:error, changeset}` if validation fails.
+
+  ## Examples
+
+      iex> cancel_challenge("challenge-id", 1)
+      {:ok, %Challenge{status: "cancelled"}}
+
+      iex> cancel_challenge("challenge-id", 2) # different from creator
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def cancel_challenge(challenge_id, cancellor_id) do
+    case get_challenge(challenge_id) do
+      {:ok, challenge} ->
+        cancellation_changeset =
+          ChallengeCancellation.changeset(%ChallengeCancellation{}, %{
+            challenge: challenge,
+            cancellor_id: cancellor_id
+          })
+
+        if cancellation_changeset.valid? do
+          update_challenge(challenge_id, %{status: "cancelled"})
+        else
+          {:error, cancellation_changeset}
         end
 
       {:error, :not_found} = error ->

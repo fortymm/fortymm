@@ -996,6 +996,145 @@ defmodule Fortymm.MatchesTest do
     end
   end
 
+  describe "cancel_challenge/2" do
+    test "cancels a valid pending challenge by creator" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      assert {:ok, cancelled_challenge} = Matches.cancel_challenge(challenge.id, 1)
+      assert cancelled_challenge.status == "cancelled"
+      assert cancelled_challenge.id == challenge.id
+      assert cancelled_challenge.created_by_id == 1
+    end
+
+    test "returns error when challenge does not exist" do
+      assert {:error, :not_found} = Matches.cancel_challenge("nonexistent-id", 1)
+    end
+
+    test "returns error when cancellor is different from creator" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      assert {:error, changeset} = Matches.cancel_challenge(challenge.id, 2)
+      refute changeset.valid?
+
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert Map.has_key?(errors, :cancellor_id)
+      assert "can only cancel your own challenge" in errors.cancellor_id
+    end
+
+    test "returns error when challenge is already accepted" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      {:ok, _accepted} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+
+      assert {:error, changeset} = Matches.cancel_challenge(challenge.id, 1)
+      refute changeset.valid?
+
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert Map.has_key?(errors, :challenge)
+      assert "must be pending, but is accepted" in errors.challenge
+    end
+
+    test "returns error when challenge is already rejected" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      {:ok, _rejected} = Matches.update_challenge(challenge.id, %{status: "rejected"})
+
+      assert {:error, changeset} = Matches.cancel_challenge(challenge.id, 1)
+      refute changeset.valid?
+
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert "must be pending, but is rejected" in errors.challenge
+    end
+
+    test "returns error when challenge is already cancelled" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      {:ok, _cancelled} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
+
+      assert {:error, changeset} = Matches.cancel_challenge(challenge.id, 1)
+      refute changeset.valid?
+
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert "must be pending, but is cancelled" in errors.challenge
+    end
+
+    test "broadcasts when challenge is cancelled" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      ChallengeUpdates.subscribe(challenge.id)
+
+      {:ok, _cancelled} = Matches.cancel_challenge(challenge.id, 1)
+
+      assert_receive {:challenge_updated, received}
+      assert received.id == challenge.id
+      assert received.status == "cancelled"
+    end
+
+    test "cancels challenge with creator ID" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 999
+        })
+
+      assert {:ok, cancelled} = Matches.cancel_challenge(challenge.id, 999)
+      assert cancelled.status == "cancelled"
+      assert cancelled.created_by_id == 999
+    end
+
+    test "persists cancellation in ETS" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: false},
+          created_by_id: 5
+        })
+
+      {:ok, _cancelled} = Matches.cancel_challenge(challenge.id, 5)
+
+      {:ok, retrieved} = Matches.get_challenge(challenge.id)
+      assert retrieved.status == "cancelled"
+    end
+
+    test "does not modify other challenge fields" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 42
+        })
+
+      {:ok, cancelled} = Matches.cancel_challenge(challenge.id, 42)
+
+      assert cancelled.status == "cancelled"
+      assert cancelled.configuration.length_in_games == 5
+      assert cancelled.configuration.rated == true
+      assert cancelled.created_by_id == 42
+    end
+  end
+
   describe "status/1" do
     test "returns :challenge_pending for pending challenges" do
       {:ok, challenge} =
