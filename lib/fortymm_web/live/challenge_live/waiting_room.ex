@@ -153,7 +153,9 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
 
   @impl true
   def handle_event("cancel_challenge", _params, socket) do
-    case Matches.update_challenge(socket.assigns.challenge.id, %{status: "cancelled"}) do
+    current_user_id = socket.assigns.current_scope.user.id
+
+    case Matches.cancel_challenge(socket.assigns.challenge.id, current_user_id) do
       {:ok, _challenge} ->
         {:noreply,
          socket
