@@ -100,7 +100,10 @@ defmodule FortymmWeb.ChallengeLive.Show do
 
   @impl true
   def handle_event("decline_challenge", _params, socket) do
-    case Matches.update_challenge(socket.assigns.challenge.id, %{status: "rejected"}) do
+    current_user_id = socket.assigns.current_scope.user.id
+    challenge_id = socket.assigns.challenge.id
+
+    case Matches.reject_challenge(challenge_id, current_user_id) do
       {:ok, _challenge} ->
         {:noreply,
          socket
@@ -113,10 +116,12 @@ defmodule FortymmWeb.ChallengeLive.Show do
          |> put_flash(:error, "Challenge not found.")
          |> push_navigate(to: ~p"/dashboard")}
 
-      {:error, _changeset} ->
+      {:error, changeset} ->
+        error_message = format_rejection_errors(changeset)
+
         {:noreply,
          socket
-         |> put_flash(:error, "Failed to decline challenge. Please try again.")}
+         |> put_flash(:error, error_message)}
     end
   end
 
@@ -238,6 +243,22 @@ defmodule FortymmWeb.ChallengeLive.Show do
 
       true ->
         "Failed to accept challenge. Please try again."
+    end
+  end
+
+  defp format_rejection_errors(changeset) do
+    errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+
+    cond do
+      Map.has_key?(errors, :rejector_id) ->
+        "You cannot decline your own challenge"
+
+      Map.has_key?(errors, :challenge) ->
+        challenge_error = errors.challenge |> List.first()
+        "This challenge #{challenge_error}"
+
+      true ->
+        "Failed to decline challenge. Please try again."
     end
   end
 end

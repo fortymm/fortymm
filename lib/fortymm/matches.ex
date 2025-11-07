@@ -3,7 +3,14 @@ defmodule Fortymm.Matches do
   The Matches context.
   """
 
-  alias Fortymm.Matches.{Challenge, ChallengeAcceptance, ChallengeStore, ChallengeUpdates, Status}
+  alias Fortymm.Matches.{
+    Challenge,
+    ChallengeAcceptance,
+    ChallengeRejection,
+    ChallengeStore,
+    ChallengeUpdates,
+    Status
+  }
 
   @doc """
   Creates a changeset for a Challenge.
@@ -179,6 +186,47 @@ defmodule Fortymm.Matches do
           update_challenge(challenge_id, %{status: "accepted"})
         else
           {:error, acceptance_changeset}
+        end
+
+      {:error, :not_found} = error ->
+        error
+    end
+  end
+
+  @doc """
+  Rejects a challenge after validating rejection rules.
+
+  Validates that:
+  - The challenge exists
+  - The challenge is in "pending" status
+  - The rejector is different from the challenge creator
+
+  Returns `{:ok, challenge}` if validation passes and the challenge is rejected.
+  Returns `{:error, :not_found}` if the challenge doesn't exist.
+  Returns `{:error, changeset}` if validation fails.
+
+  ## Examples
+
+      iex> reject_challenge("challenge-id", 2)
+      {:ok, %Challenge{status: "rejected"}}
+
+      iex> reject_challenge("challenge-id", 1) # same as creator
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def reject_challenge(challenge_id, rejector_id) do
+    case get_challenge(challenge_id) do
+      {:ok, challenge} ->
+        rejection_changeset =
+          ChallengeRejection.changeset(%ChallengeRejection{}, %{
+            challenge: challenge,
+            rejector_id: rejector_id
+          })
+
+        if rejection_changeset.valid? do
+          update_challenge(challenge_id, %{status: "rejected"})
+        else
+          {:error, rejection_changeset}
         end
 
       {:error, :not_found} = error ->
