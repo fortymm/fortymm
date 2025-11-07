@@ -93,72 +93,75 @@ defmodule FortymmWeb.DashboardLive do
             </div>
 
             <.form for={@form} phx-submit="create_challenge" id="challenge-form">
-              <div class="space-y-6">
-                <div>
-                  <fieldset class="fieldset">
-                    <legend class="fieldset-legend">Match Length</legend>
-                    <div class="grid grid-cols-2 gap-3">
+              <.inputs_for :let={config_form} field={@form[:configuration]}>
+                <div class="space-y-6">
+                  <div>
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend">Match Length</legend>
+                      <div class="grid grid-cols-2 gap-3">
+                        <input
+                          class="btn"
+                          type="radio"
+                          name={config_form[:length_in_games].name}
+                          value="1"
+                          aria-label="Just One Game"
+                        />
+                        <input
+                          class="btn"
+                          type="radio"
+                          name={config_form[:length_in_games].name}
+                          value="3"
+                          aria-label="Best of 3"
+                          checked
+                        />
+                        <input
+                          class="btn"
+                          type="radio"
+                          name={config_form[:length_in_games].name}
+                          value="5"
+                          aria-label="Best of 5"
+                        />
+                        <input
+                          class="btn"
+                          type="radio"
+                          name={config_form[:length_in_games].name}
+                          value="7"
+                          aria-label="Best of 7"
+                        />
+                      </div>
+                      <%= if config_form[:length_in_games].errors != [] do %>
+                        <label class="label">
+                          <span class="label-text-alt text-error">
+                            {Enum.map(config_form[:length_in_games].errors, fn {msg, _} -> msg end)
+                            |> Enum.join(", ")}
+                          </span>
+                        </label>
+                      <% end %>
+                    </fieldset>
+                  </div>
+
+                  <div>
+                    <label class="label cursor-pointer justify-start gap-3">
                       <input
-                        class="btn"
-                        type="radio"
-                        name="challenge[length_in_games]"
-                        value="1"
-                        aria-label="Just One Game"
+                        type="checkbox"
+                        name={config_form[:rated].name}
+                        value="true"
+                        checked="checked"
+                        class="checkbox checkbox-primary"
                       />
-                      <input
-                        class="btn"
-                        type="radio"
-                        name="challenge[length_in_games]"
-                        value="3"
-                        aria-label="Best of 3"
-                        checked
-                      />
-                      <input
-                        class="btn"
-                        type="radio"
-                        name="challenge[length_in_games]"
-                        value="5"
-                        aria-label="Best of 5"
-                      />
-                      <input
-                        class="btn"
-                        type="radio"
-                        name="challenge[length_in_games]"
-                        value="7"
-                        aria-label="Best of 7"
-                      />
-                    </div>
-                    <%= if @form[:length_in_games].errors != [] do %>
+                      <span class="label-text font-semibold">Rated</span>
+                    </label>
+                    <%= if config_form[:rated].errors != [] do %>
                       <label class="label">
                         <span class="label-text-alt text-error">
-                          {Enum.map(@form[:length_in_games].errors, fn {msg, _} -> msg end)
+                          {Enum.map(config_form[:rated].errors, fn {msg, _} -> msg end)
                           |> Enum.join(", ")}
                         </span>
                       </label>
                     <% end %>
-                  </fieldset>
+                  </div>
                 </div>
-
-                <div>
-                  <label class="label cursor-pointer justify-start gap-3">
-                    <input
-                      type="checkbox"
-                      name="challenge[rated]"
-                      value="true"
-                      checked="checked"
-                      class="checkbox checkbox-primary"
-                    />
-                    <span class="label-text font-semibold">Rated</span>
-                  </label>
-                  <%= if @form[:rated].errors != [] do %>
-                    <label class="label">
-                      <span class="label-text-alt text-error">
-                        {Enum.map(@form[:rated].errors, fn {msg, _} -> msg end) |> Enum.join(", ")}
-                      </span>
-                    </label>
-                  <% end %>
-                </div>
-              </div>
+              </.inputs_for>
 
               <div class="modal-action">
                 <button type="button" class="btn btn-ghost" onclick="challenge_modal.close()">

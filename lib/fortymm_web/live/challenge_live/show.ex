@@ -25,13 +25,13 @@ defmodule FortymmWeb.ChallengeLive.Show do
           <div class="w-full max-w-2xl mx-auto space-y-3 mb-8">
             <div class="flex justify-between items-center px-6 py-5 bg-base-300/50 rounded-xl">
               <span class="font-semibold text-lg">Match Length:</span>
-              <span class="text-lg">Best of {@challenge.length_in_games}</span>
+              <span class="text-lg">Best of {@challenge.configuration.length_in_games}</span>
             </div>
 
             <div class="flex justify-between items-center px-6 py-5 bg-base-300/50 rounded-xl">
               <span class="font-semibold text-lg">Match Type:</span>
               <span class="flex items-center gap-2">
-                <%= if @challenge.rated do %>
+                <%= if @challenge.configuration.rated do %>
                   <span class="badge badge-primary badge-lg">Rated</span>
                 <% else %>
                   <span class="badge badge-ghost badge-lg">Unrated</span>

@@ -6,12 +6,12 @@ defmodule Fortymm.Matches.Challenge do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @valid_lengths [1, 3, 5, 7]
+  alias Fortymm.Matches.Configuration
+
   @valid_statuses ["pending", "accepted", "rejected", "cancelled"]
 
   embedded_schema do
-    field :length_in_games, :integer
-    field :rated, :boolean, default: false
+    embeds_one :configuration, Configuration
     field :created_by_id, :integer
     field :status, :string, default: "pending"
   end
@@ -21,20 +21,18 @@ defmodule Fortymm.Matches.Challenge do
 
   ## Examples
 
-      iex> changeset(%Challenge{}, %{length_in_games: 3})
+      iex> changeset(%Challenge{}, %{configuration: %{length_in_games: 3}})
       %Ecto.Changeset{valid?: true}
 
-      iex> changeset(%Challenge{}, %{length_in_games: 2})
+      iex> changeset(%Challenge{}, %{configuration: %{length_in_games: 2}})
       %Ecto.Changeset{valid?: false}
 
   """
   def changeset(challenge, attrs) do
     challenge
-    |> cast(attrs, [:length_in_games, :rated, :created_by_id, :status])
-    |> validate_required([:length_in_games, :created_by_id])
-    |> validate_inclusion(:length_in_games, @valid_lengths,
-      message: "must be one of: #{Enum.join(@valid_lengths, ", ")}"
-    )
+    |> cast(attrs, [:created_by_id, :status])
+    |> cast_embed(:configuration, required: true)
+    |> validate_required([:created_by_id])
     |> validate_inclusion(:status, @valid_statuses,
       message: "must be one of: #{Enum.join(@valid_statuses, ", ")}"
     )

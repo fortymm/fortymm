@@ -12,81 +12,100 @@ defmodule Fortymm.MatchesTest do
 
   describe "challenge_changeset/1" do
     test "valid with length_in_games of 1" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 1, created_by_id: 1})
+      changeset =
+        Matches.challenge_changeset(%{configuration: %{length_in_games: 1}, created_by_id: 1})
+
       assert changeset.valid?
     end
 
     test "valid with length_in_games of 3" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 3, created_by_id: 1})
+      changeset =
+        Matches.challenge_changeset(%{configuration: %{length_in_games: 3}, created_by_id: 1})
+
       assert changeset.valid?
     end
 
     test "valid with length_in_games of 5" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 5, created_by_id: 1})
+      changeset =
+        Matches.challenge_changeset(%{configuration: %{length_in_games: 5}, created_by_id: 1})
+
       assert changeset.valid?
     end
 
     test "valid with length_in_games of 7" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 7, created_by_id: 1})
+      changeset =
+        Matches.challenge_changeset(%{configuration: %{length_in_games: 7}, created_by_id: 1})
+
       assert changeset.valid?
     end
 
     test "invalid with length_in_games of 2" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 2})
+      changeset = Matches.challenge_changeset(%{configuration: %{length_in_games: 2}})
       refute changeset.valid?
-      assert "must be one of: 1, 3, 5, 7" in errors_on(changeset).length_in_games
+      assert %{configuration: %{length_in_games: errors}} = errors_on(changeset)
+      assert "must be one of: 1, 3, 5, 7" in errors
     end
 
     test "invalid with length_in_games of 4" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 4})
+      changeset = Matches.challenge_changeset(%{configuration: %{length_in_games: 4}})
       refute changeset.valid?
-      assert "must be one of: 1, 3, 5, 7" in errors_on(changeset).length_in_games
+      assert %{configuration: %{length_in_games: errors}} = errors_on(changeset)
+      assert "must be one of: 1, 3, 5, 7" in errors
     end
 
     test "invalid with length_in_games of 6" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 6})
+      changeset = Matches.challenge_changeset(%{configuration: %{length_in_games: 6}})
       refute changeset.valid?
-      assert "must be one of: 1, 3, 5, 7" in errors_on(changeset).length_in_games
+      assert %{configuration: %{length_in_games: errors}} = errors_on(changeset)
+      assert "must be one of: 1, 3, 5, 7" in errors
     end
 
     test "invalid with length_in_games of 0" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 0})
+      changeset = Matches.challenge_changeset(%{configuration: %{length_in_games: 0}})
       refute changeset.valid?
-      assert "must be one of: 1, 3, 5, 7" in errors_on(changeset).length_in_games
+      assert %{configuration: %{length_in_games: errors}} = errors_on(changeset)
+      assert "must be one of: 1, 3, 5, 7" in errors
     end
 
     test "invalid with length_in_games of 10" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 10})
+      changeset = Matches.challenge_changeset(%{configuration: %{length_in_games: 10}})
       refute changeset.valid?
-      assert "must be one of: 1, 3, 5, 7" in errors_on(changeset).length_in_games
+      assert %{configuration: %{length_in_games: errors}} = errors_on(changeset)
+      assert "must be one of: 1, 3, 5, 7" in errors
     end
 
     test "invalid without length_in_games" do
       changeset = Matches.challenge_changeset(%{})
       refute changeset.valid?
-      assert "can't be blank" in errors_on(changeset).length_in_games
+      errors = errors_on(changeset)
+      assert "can't be blank" in errors.configuration
     end
 
     test "invalid with nil length_in_games" do
-      changeset = Matches.challenge_changeset(%{length_in_games: nil})
+      changeset = Matches.challenge_changeset(%{configuration: %{length_in_games: nil}})
       refute changeset.valid?
-      assert "can't be blank" in errors_on(changeset).length_in_games
+      assert %{configuration: %{length_in_games: errors}} = errors_on(changeset)
+      assert "can't be blank" in errors
     end
 
     test "invalid without created_by_id" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 3})
+      changeset = Matches.challenge_changeset(%{configuration: %{length_in_games: 3}})
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).created_by_id
     end
 
     test "invalid with nil created_by_id" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 3, created_by_id: nil})
+      changeset =
+        Matches.challenge_changeset(%{configuration: %{length_in_games: 3}, created_by_id: nil})
+
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).created_by_id
     end
 
     test "valid with created_by_id" do
-      changeset = Matches.challenge_changeset(%{length_in_games: 3, created_by_id: 1})
+      changeset =
+        Matches.challenge_changeset(%{configuration: %{length_in_games: 3}, created_by_id: 1})
+
       assert changeset.valid?
     end
   end
@@ -94,66 +113,101 @@ defmodule Fortymm.MatchesTest do
   describe "Challenge.changeset/2" do
     test "returns a valid changeset with correct data" do
       changeset =
-        Challenge.changeset(%Challenge{}, %{length_in_games: 3, rated: true, created_by_id: 1})
+        Challenge.changeset(%Challenge{}, %{
+          configuration: %{length_in_games: 3, rated: true},
+          created_by_id: 1
+        })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :length_in_games) == 3
-      assert Ecto.Changeset.get_field(changeset, :rated) == true
+      configuration = Ecto.Changeset.get_field(changeset, :configuration)
+      assert configuration.length_in_games == 3
+      assert configuration.rated == true
     end
 
     test "returns an invalid changeset with incorrect length" do
       changeset =
-        Challenge.changeset(%Challenge{}, %{length_in_games: 8, rated: false, created_by_id: 1})
+        Challenge.changeset(%Challenge{}, %{
+          configuration: %{length_in_games: 8, rated: false},
+          created_by_id: 1
+        })
 
       refute changeset.valid?
     end
 
     test "defaults rated to false when not provided" do
-      changeset = Challenge.changeset(%Challenge{}, %{length_in_games: 3, created_by_id: 1})
+      changeset =
+        Challenge.changeset(%Challenge{}, %{
+          configuration: %{length_in_games: 3},
+          created_by_id: 1
+        })
+
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :rated) == false
+      configuration = Ecto.Changeset.get_field(changeset, :configuration)
+      assert configuration.rated == false
     end
 
     test "can explicitly set rated to false" do
       changeset =
-        Challenge.changeset(%Challenge{}, %{length_in_games: 3, rated: false, created_by_id: 1})
+        Challenge.changeset(%Challenge{}, %{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :rated) == false
+      configuration = Ecto.Changeset.get_field(changeset, :configuration)
+      assert configuration.rated == false
     end
 
     test "accepts rated as true" do
       changeset =
-        Challenge.changeset(%Challenge{}, %{length_in_games: 5, rated: true, created_by_id: 1})
+        Challenge.changeset(%Challenge{}, %{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 1
+        })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :rated) == true
+      configuration = Ecto.Changeset.get_field(changeset, :configuration)
+      assert configuration.rated == true
     end
 
     test "accepts rated as false" do
       changeset =
-        Challenge.changeset(%Challenge{}, %{length_in_games: 5, rated: false, created_by_id: 1})
+        Challenge.changeset(%Challenge{}, %{
+          configuration: %{length_in_games: 5, rated: false},
+          created_by_id: 1
+        })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :rated) == false
+      configuration = Ecto.Changeset.get_field(changeset, :configuration)
+      assert configuration.rated == false
     end
 
     test "requires created_by_id" do
-      changeset = Challenge.changeset(%Challenge{}, %{length_in_games: 3, rated: false})
+      changeset =
+        Challenge.changeset(%Challenge{}, %{configuration: %{length_in_games: 3, rated: false}})
+
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).created_by_id
     end
 
     test "stores created_by_id correctly" do
       changeset =
-        Challenge.changeset(%Challenge{}, %{length_in_games: 3, rated: false, created_by_id: 42})
+        Challenge.changeset(%Challenge{}, %{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 42
+        })
 
       assert changeset.valid?
       assert Ecto.Changeset.get_field(changeset, :created_by_id) == 42
     end
 
     test "defaults status to pending when not provided" do
-      changeset = Challenge.changeset(%Challenge{}, %{length_in_games: 3, created_by_id: 1})
+      changeset =
+        Challenge.changeset(%Challenge{}, %{
+          configuration: %{length_in_games: 3},
+          created_by_id: 1
+        })
+
       assert changeset.valid?
       assert Ecto.Changeset.get_field(changeset, :status) == "pending"
     end
@@ -161,7 +215,7 @@ defmodule Fortymm.MatchesTest do
     test "accepts status as pending" do
       changeset =
         Challenge.changeset(%Challenge{}, %{
-          length_in_games: 3,
+          configuration: %{length_in_games: 3},
           created_by_id: 1,
           status: "pending"
         })
@@ -173,7 +227,7 @@ defmodule Fortymm.MatchesTest do
     test "accepts status as accepted" do
       changeset =
         Challenge.changeset(%Challenge{}, %{
-          length_in_games: 3,
+          configuration: %{length_in_games: 3},
           created_by_id: 1,
           status: "accepted"
         })
@@ -185,7 +239,7 @@ defmodule Fortymm.MatchesTest do
     test "accepts status as rejected" do
       changeset =
         Challenge.changeset(%Challenge{}, %{
-          length_in_games: 3,
+          configuration: %{length_in_games: 3},
           created_by_id: 1,
           status: "rejected"
         })
@@ -197,7 +251,7 @@ defmodule Fortymm.MatchesTest do
     test "accepts status as cancelled" do
       changeset =
         Challenge.changeset(%Challenge{}, %{
-          length_in_games: 3,
+          configuration: %{length_in_games: 3},
           created_by_id: 1,
           status: "cancelled"
         })
@@ -209,7 +263,7 @@ defmodule Fortymm.MatchesTest do
     test "rejects invalid status value" do
       changeset =
         Challenge.changeset(%Challenge{}, %{
-          length_in_games: 3,
+          configuration: %{length_in_games: 3},
           created_by_id: 1,
           status: "invalid"
         })
@@ -222,7 +276,7 @@ defmodule Fortymm.MatchesTest do
     test "treats empty string status as not provided" do
       changeset =
         Challenge.changeset(%Challenge{}, %{
-          length_in_games: 3,
+          configuration: %{length_in_games: 3},
           created_by_id: 1,
           status: ""
         })
@@ -235,7 +289,7 @@ defmodule Fortymm.MatchesTest do
     test "allows nil status and uses default" do
       changeset =
         Challenge.changeset(%Challenge{}, %{
-          length_in_games: 3,
+          configuration: %{length_in_games: 3},
           created_by_id: 1,
           status: nil
         })
@@ -250,10 +304,13 @@ defmodule Fortymm.MatchesTest do
   describe "create_challenge/1" do
     test "creates and stores a valid challenge in ETS" do
       assert {:ok, challenge} =
-               Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+               Matches.create_challenge(%{
+                 configuration: %{length_in_games: 3, rated: false},
+                 created_by_id: 1
+               })
 
-      assert challenge.length_in_games == 3
-      assert challenge.rated == false
+      assert challenge.configuration.length_in_games == 3
+      assert challenge.configuration.rated == false
       assert challenge.created_by_id == 1
       assert is_binary(challenge.id)
       assert String.length(challenge.id) == 32
@@ -261,60 +318,86 @@ defmodule Fortymm.MatchesTest do
 
     test "creates a rated challenge" do
       assert {:ok, challenge} =
-               Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 1})
+               Matches.create_challenge(%{
+                 configuration: %{length_in_games: 5, rated: true},
+                 created_by_id: 1
+               })
 
-      assert challenge.length_in_games == 5
-      assert challenge.rated == true
+      assert challenge.configuration.length_in_games == 5
+      assert challenge.configuration.rated == true
       assert challenge.created_by_id == 1
     end
 
     test "returns error for invalid challenge" do
       assert {:error, changeset} =
-               Matches.create_challenge(%{length_in_games: 2, rated: false, created_by_id: 1})
+               Matches.create_challenge(%{
+                 configuration: %{length_in_games: 2, rated: false},
+                 created_by_id: 1
+               })
 
       refute changeset.valid?
-      assert "must be one of: 1, 3, 5, 7" in errors_on(changeset).length_in_games
+      assert %{configuration: %{length_in_games: errors}} = errors_on(changeset)
+      assert "must be one of: 1, 3, 5, 7" in errors
     end
 
     test "defaults rated to false when not provided" do
-      assert {:ok, challenge} = Matches.create_challenge(%{length_in_games: 3, created_by_id: 1})
-      assert challenge.length_in_games == 3
-      assert challenge.rated == false
+      assert {:ok, challenge} =
+               Matches.create_challenge(%{configuration: %{length_in_games: 3}, created_by_id: 1})
+
+      assert challenge.configuration.length_in_games == 3
+      assert challenge.configuration.rated == false
     end
 
     test "generates unique IDs for each challenge" do
       {:ok, challenge1} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       {:ok, challenge2} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 1
+        })
 
       assert challenge1.id != challenge2.id
     end
 
     test "stores challenge so it can be retrieved" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 7, rated: true, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: true},
+          created_by_id: 1
+        })
 
       assert {:ok, retrieved} = Matches.get_challenge(challenge.id)
       assert retrieved.id == challenge.id
-      assert retrieved.length_in_games == 7
-      assert retrieved.rated == true
+      assert retrieved.configuration.length_in_games == 7
+      assert retrieved.configuration.rated == true
       assert retrieved.created_by_id == 1
     end
 
     test "requires created_by_id" do
-      assert {:error, changeset} = Matches.create_challenge(%{length_in_games: 3, rated: false})
+      assert {:error, changeset} =
+               Matches.create_challenge(%{configuration: %{length_in_games: 3, rated: false}})
+
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).created_by_id
     end
 
     test "stores created_by_id from different users" do
       {:ok, challenge1} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       {:ok, challenge2} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 2})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 2
+        })
 
       assert challenge1.created_by_id == 1
       assert challenge2.created_by_id == 2
@@ -324,12 +407,15 @@ defmodule Fortymm.MatchesTest do
   describe "get_challenge/1" do
     test "returns challenge when it exists" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: false},
+          created_by_id: 1
+        })
 
       assert {:ok, retrieved} = Matches.get_challenge(challenge.id)
       assert retrieved.id == challenge.id
-      assert retrieved.length_in_games == 5
-      assert retrieved.rated == false
+      assert retrieved.configuration.length_in_games == 5
+      assert retrieved.configuration.rated == false
     end
 
     test "returns error when challenge does not exist" do
@@ -344,13 +430,22 @@ defmodule Fortymm.MatchesTest do
 
     test "returns all challenges" do
       {:ok, challenge1} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       {:ok, challenge2} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 1
+        })
 
       {:ok, challenge3} =
-        Matches.create_challenge(%{length_in_games: 7, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: false},
+          created_by_id: 1
+        })
 
       challenges = Matches.list_challenges()
       assert length(challenges) == 3
@@ -363,7 +458,10 @@ defmodule Fortymm.MatchesTest do
   describe "delete_challenge/1" do
     test "deletes an existing challenge" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert :ok = Matches.delete_challenge(challenge.id)
       assert {:error, :not_found} = Matches.get_challenge(challenge.id)
@@ -377,29 +475,41 @@ defmodule Fortymm.MatchesTest do
   describe "update_challenge/2" do
     test "updates an existing challenge" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert {:ok, updated} = Matches.update_challenge(challenge.id, %{status: "accepted"})
       assert updated.id == challenge.id
       assert updated.status == "accepted"
-      assert updated.length_in_games == 3
-      assert updated.rated == false
+      assert updated.configuration.length_in_games == 3
+      assert updated.configuration.rated == false
     end
 
     test "updates multiple fields" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert {:ok, updated} =
-               Matches.update_challenge(challenge.id, %{status: "rejected", rated: true})
+               Matches.update_challenge(challenge.id, %{
+                 status: "rejected",
+                 configuration: %{rated: true}
+               })
 
       assert updated.status == "rejected"
-      assert updated.rated == true
+      assert updated.configuration.rated == true
     end
 
     test "persists updates in ETS" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: false},
+          created_by_id: 1
+        })
 
       {:ok, _updated} = Matches.update_challenge(challenge.id, %{status: "accepted"})
 
@@ -409,7 +519,10 @@ defmodule Fortymm.MatchesTest do
 
     test "returns error for invalid update" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert {:error, changeset} =
                Matches.update_challenge(challenge.id, %{status: "invalid_status"})
@@ -426,16 +539,25 @@ defmodule Fortymm.MatchesTest do
 
     test "validates length_in_games on update" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
-      assert {:error, changeset} = Matches.update_challenge(challenge.id, %{length_in_games: 2})
+      assert {:error, changeset} =
+               Matches.update_challenge(challenge.id, %{configuration: %{length_in_games: 2}})
+
       refute changeset.valid?
-      assert "must be one of: 1, 3, 5, 7" in errors_on(changeset).length_in_games
+      assert %{configuration: %{length_in_games: errors}} = errors_on(changeset)
+      assert "must be one of: 1, 3, 5, 7" in errors
     end
 
     test "can update challenge to cancelled status" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert {:ok, updated} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
       assert updated.status == "cancelled"
@@ -443,14 +565,20 @@ defmodule Fortymm.MatchesTest do
 
     test "challenge starts with pending status" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert challenge.status == "pending"
     end
 
     test "can transition from pending to accepted" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert challenge.status == "pending"
       {:ok, updated} = Matches.update_challenge(challenge.id, %{status: "accepted"})
@@ -459,7 +587,10 @@ defmodule Fortymm.MatchesTest do
 
     test "can transition from pending to rejected" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert challenge.status == "pending"
       {:ok, updated} = Matches.update_challenge(challenge.id, %{status: "rejected"})
@@ -468,7 +599,10 @@ defmodule Fortymm.MatchesTest do
 
     test "can transition from pending to cancelled" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert challenge.status == "pending"
       {:ok, updated} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
@@ -481,14 +615,20 @@ defmodule Fortymm.MatchesTest do
       ChallengeUpdates.subscribe("will-be-generated")
 
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       # Subscribe to the actual challenge ID
       ChallengeUpdates.subscribe(challenge.id)
 
       # Create another challenge to trigger a broadcast we're subscribed to
       {:ok, challenge2} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 2})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 2
+        })
 
       ChallengeUpdates.subscribe(challenge2.id)
 
@@ -502,7 +642,10 @@ defmodule Fortymm.MatchesTest do
 
     test "update_challenge broadcasts the updated challenge" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       ChallengeUpdates.subscribe(challenge.id)
 
@@ -511,26 +654,35 @@ defmodule Fortymm.MatchesTest do
       assert_receive {:challenge_updated, received}
       assert received.id == challenge.id
       assert received.status == "accepted"
-      assert received.length_in_games == 3
+      assert received.configuration.length_in_games == 3
     end
 
     test "broadcasts include all updated fields" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       ChallengeUpdates.subscribe(challenge.id)
 
       {:ok, _updated} =
-        Matches.update_challenge(challenge.id, %{status: "rejected", rated: true})
+        Matches.update_challenge(challenge.id, %{
+          status: "rejected",
+          configuration: %{rated: true}
+        })
 
       assert_receive {:challenge_updated, received}
       assert received.status == "rejected"
-      assert received.rated == true
+      assert received.configuration.rated == true
     end
 
     test "failed updates do not broadcast" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       ChallengeUpdates.subscribe(challenge.id)
 
@@ -542,10 +694,16 @@ defmodule Fortymm.MatchesTest do
 
     test "broadcasts only to subscribers of the specific challenge" do
       {:ok, challenge1} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       {:ok, challenge2} =
-        Matches.create_challenge(%{length_in_games: 5, rated: false, created_by_id: 2})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: false},
+          created_by_id: 2
+        })
 
       challenge2_id = challenge2.id
 
@@ -563,14 +721,20 @@ defmodule Fortymm.MatchesTest do
   describe "status/1" do
     test "returns :challenge_pending for pending challenges" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       assert Matches.status(challenge) == :challenge_pending
     end
 
     test "returns :challenge_accepted for accepted challenges" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 2})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 2
+        })
 
       {:ok, accepted_challenge} = Matches.update_challenge(challenge.id, %{status: "accepted"})
 
@@ -579,7 +743,10 @@ defmodule Fortymm.MatchesTest do
 
     test "returns :challenge_rejected for rejected challenges" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 7, rated: false, created_by_id: 3})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: false},
+          created_by_id: 3
+        })
 
       {:ok, rejected_challenge} = Matches.update_challenge(challenge.id, %{status: "rejected"})
 
@@ -588,7 +755,10 @@ defmodule Fortymm.MatchesTest do
 
     test "returns :challenge_cancelled for cancelled challenges" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 1, rated: true, created_by_id: 4})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 1, rated: true},
+          created_by_id: 4
+        })
 
       {:ok, cancelled_challenge} = Matches.update_challenge(challenge.id, %{status: "cancelled"})
 
@@ -597,7 +767,10 @@ defmodule Fortymm.MatchesTest do
 
     test "status changes as challenge is updated" do
       {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 3, rated: false, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
 
       # Initially pending
       assert Matches.status(challenge) == :challenge_pending
@@ -613,13 +786,22 @@ defmodule Fortymm.MatchesTest do
 
     test "status is independent of other challenge fields" do
       {:ok, challenge1} =
-        Matches.create_challenge(%{length_in_games: 1, rated: true, created_by_id: 1})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 1, rated: true},
+          created_by_id: 1
+        })
 
       {:ok, challenge2} =
-        Matches.create_challenge(%{length_in_games: 7, rated: false, created_by_id: 999})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: false},
+          created_by_id: 999
+        })
 
       {:ok, challenge3} =
-        Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: 42})
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 42
+        })
 
       # All should start as pending regardless of other fields
       assert Matches.status(challenge1) == :challenge_pending
