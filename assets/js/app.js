@@ -25,11 +25,49 @@ import { LiveSocket } from "phoenix_live_view"
 import { hooks as colocatedHooks } from "phoenix-colocated/fortymm"
 import topbar from "../vendor/topbar"
 
+// Copy to clipboard hook
+const CopyHook = {
+  mounted() {
+    this.el.addEventListener("click", () => {
+      const targetSelector = this.el.dataset.target
+      const input = document.querySelector(targetSelector)
+
+      if (input) {
+        navigator.clipboard.writeText(input.value).then(() => {
+          // Clear any existing timeout from previous clicks
+          if (this.timeoutId) {
+            clearTimeout(this.timeoutId)
+          }
+
+          // Store original HTML
+          const originalHTML = this.el.innerHTML
+
+          // Show checkmark icon
+          this.el.innerHTML = '<span class="hero-check size-5"></span>'
+
+          // Revert after 2 seconds
+          this.timeoutId = setTimeout(() => {
+            this.el.innerHTML = originalHTML
+          }, 2000)
+        }).catch(err => {
+          console.error('Failed to copy text:', err)
+        })
+      }
+    })
+  },
+
+  destroyed() {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId)
+    }
+  }
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },
-  hooks: { ...colocatedHooks },
+  hooks: { ...colocatedHooks, Copy: CopyHook },
 })
 
 // Show progress bar on live navigation and form submits

@@ -28,20 +28,21 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
       assert html =~ "Challenge sent!"
     end
 
-    test "displays the challenge ID in the details", %{conn: conn} do
+    test "displays the share URL with copy button", %{conn: conn} do
       user = user_fixture()
 
       {:ok, challenge} =
         Matches.create_challenge(%{length_in_games: 5, rated: true, created_by_id: user.id})
 
-      {:ok, _lv, html} =
+      {:ok, lv, _html} =
         conn
         |> log_in_user(user)
         |> live(~p"/challenges/#{challenge.id}/waiting_room")
 
-      assert html =~ "Challenge ID:"
-      # Display first 8 characters of the ID
-      assert html =~ String.slice(challenge.id, 0..7)
+      # Check for share URL input
+      assert has_element?(lv, "input#challenge-url[readonly]")
+      # Check for copy button
+      assert has_element?(lv, "button#copy-button[phx-hook='Copy']")
     end
 
     test "displays waiting status for viewers", %{conn: conn} do
@@ -72,36 +73,6 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
 
       assert html =~ "Match Type:"
       assert html =~ "Rated"
-    end
-
-    test "displays info alert with notification message", %{conn: conn} do
-      user = user_fixture()
-
-      {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 1, rated: false, created_by_id: user.id})
-
-      {:ok, _lv, html} =
-        conn
-        |> log_in_user(user)
-        |> live(~p"/challenges/#{challenge.id}/waiting_room")
-
-      assert html =~ "Heads up!"
-      assert html =~ "Your opponent will receive a notification"
-      assert html =~ "automatically redirected when they accept"
-    end
-
-    test "has a back to dashboard link", %{conn: conn} do
-      user = user_fixture()
-
-      {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 5, rated: false, created_by_id: user.id})
-
-      {:ok, lv, _html} =
-        conn
-        |> log_in_user(user)
-        |> live(~p"/challenges/#{challenge.id}/waiting_room")
-
-      assert has_element?(lv, "a[href='/dashboard']", "Back to Dashboard")
     end
 
     test "has a cancel challenge button", %{conn: conn} do
@@ -174,13 +145,12 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
         |> live(~p"/challenges/#{challenge.id}/waiting_room")
 
       # Check for all detail cards by their labels
-      assert has_element?(lv, "span", "Challenge ID:")
       assert has_element?(lv, "span", "Match Length:")
       assert has_element?(lv, "span", "Match Type:")
       assert has_element?(lv, "span", "Viewers:")
     end
 
-    test "handles different challenge IDs correctly", %{conn: conn} do
+    test "handles different challenge lengths correctly", %{conn: conn} do
       user = user_fixture()
 
       {:ok, challenge1} =
@@ -199,8 +169,8 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
         |> log_in_user(user)
         |> live(~p"/challenges/#{challenge2.id}/waiting_room")
 
-      assert html1 =~ String.slice(challenge1.id, 0..7)
-      assert html2 =~ String.slice(challenge2.id, 0..7)
+      assert html1 =~ "Best of 1"
+      assert html2 =~ "Best of 7"
     end
   end
 

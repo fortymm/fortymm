@@ -29,7 +29,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       assert html =~ "Best of 3"
     end
 
-    test "displays challenge ID", %{conn: conn} do
+    test "displays challenge header", %{conn: conn} do
       creator = user_fixture()
       acceptor = user_fixture()
 
@@ -41,8 +41,8 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
         |> log_in_user(acceptor)
         |> live(~p"/challenges/#{challenge.id}")
 
-      assert html =~ "Challenge ID:"
-      assert html =~ String.slice(challenge.id, 0..7)
+      assert html =~ "Challenge Details"
+      assert html =~ "been challenged"
     end
 
     test "displays match length correctly", %{conn: conn} do
@@ -121,21 +121,6 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
         |> live(~p"/challenges/#{challenge.id}")
 
       assert has_element?(lv, "button[phx-click='decline_challenge']")
-    end
-
-    test "has back to dashboard link", %{conn: conn} do
-      creator = user_fixture()
-      acceptor = user_fixture()
-
-      {:ok, challenge} =
-        Matches.create_challenge(%{length_in_games: 7, rated: true, created_by_id: creator.id})
-
-      {:ok, lv, _html} =
-        conn
-        |> log_in_user(acceptor)
-        |> live(~p"/challenges/#{challenge.id}")
-
-      assert has_element?(lv, "a[href='/dashboard']")
     end
 
     test "redirects if user is not logged in", %{conn: conn} do

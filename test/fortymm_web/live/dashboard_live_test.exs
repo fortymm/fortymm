@@ -14,7 +14,6 @@ defmodule FortymmWeb.DashboardLiveTest do
         |> live(~p"/dashboard")
 
       assert html =~ "Dashboard"
-      assert html =~ "Welcome back"
     end
 
     test "displays the user's username in the welcome message", %{conn: conn} do
@@ -25,7 +24,8 @@ defmodule FortymmWeb.DashboardLiveTest do
         |> log_in_user(user)
         |> live(~p"/dashboard")
 
-      assert html =~ "Welcome back, testuser123!"
+      # Username is displayed in the navbar user menu
+      assert html =~ "testuser123"
     end
 
     test "displays coming soon content", %{conn: conn} do
@@ -89,7 +89,6 @@ defmodule FortymmWeb.DashboardLiveTest do
 
       assert html =~ "Challenge a Friend"
       assert html =~ "Ready to put your skills to the test?"
-      assert html =~ "Start Challenge"
     end
 
     test "displays challenge modal with form", %{conn: conn} do
@@ -118,14 +117,14 @@ defmodule FortymmWeb.DashboardLiveTest do
       assert has_element?(lv, "input[name='challenge[length_in_games]'][value='3']")
       assert has_element?(lv, "input[name='challenge[length_in_games]'][value='5']")
       assert has_element?(lv, "input[name='challenge[length_in_games]'][value='7']")
-      assert has_element?(lv, "label", "Match Length (Best of)")
+      assert has_element?(lv, "legend", "Match Length")
 
       # Check for rated checkbox
       assert has_element?(lv, "input[name='challenge[rated]'][type='checkbox']")
-      assert has_element?(lv, "label", "Rated Match")
+      assert has_element?(lv, "label", "Rated")
 
       # Check for submit button
-      assert has_element?(lv, "button[type='submit']", "Send Challenge")
+      assert has_element?(lv, "button[type='submit']", "Create")
     end
 
     test "challenge form displays match length options", %{conn: conn} do
@@ -136,7 +135,7 @@ defmodule FortymmWeb.DashboardLiveTest do
         |> log_in_user(user)
         |> live(~p"/dashboard")
 
-      assert html =~ "Best of 1"
+      assert html =~ "Just One Game"
       assert html =~ "Best of 3"
       assert html =~ "Best of 5"
       assert html =~ "Best of 7"
