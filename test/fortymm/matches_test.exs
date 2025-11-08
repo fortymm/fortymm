@@ -737,6 +737,70 @@ defmodule Fortymm.MatchesTest do
       assert updated_challenge.status == "accepted"
     end
 
+    test "sets match_id on challenge when accepted" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      # Verify match_id is nil before acceptance
+      assert is_nil(challenge.match_id)
+
+      assert {:ok, match} = Matches.accept_challenge(challenge.id, 2)
+
+      # Verify the challenge has the match_id set
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.match_id == match.id
+      assert updated_challenge.status == "accepted"
+    end
+
+    test "match_id matches the created match's id" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 100
+        })
+
+      assert {:ok, match} = Matches.accept_challenge(challenge.id, 200)
+
+      # Verify the match_id on the challenge matches the match's ID
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.match_id == match.id
+      assert is_binary(updated_challenge.match_id)
+      assert String.length(updated_challenge.match_id) == 32
+    end
+
+    test "match_id remains nil when challenge is not accepted" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      # Verify match_id is nil for pending challenge
+      {:ok, pending_challenge} = Matches.get_challenge(challenge.id)
+      assert is_nil(pending_challenge.match_id)
+
+      # Reject the challenge instead of accepting it
+      {:ok, rejected_challenge} = Matches.reject_challenge(challenge.id, 2)
+      assert is_nil(rejected_challenge.match_id)
+      assert rejected_challenge.status == "rejected"
+    end
+
+    test "match_id remains nil when challenge is cancelled" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: false},
+          created_by_id: 5
+        })
+
+      # Cancel the challenge
+      {:ok, cancelled_challenge} = Matches.cancel_challenge(challenge.id, 5)
+      assert is_nil(cancelled_challenge.match_id)
+      assert cancelled_challenge.status == "cancelled"
+    end
+
     test "returns error when challenge does not exist" do
       assert {:error, :not_found} = Matches.accept_challenge("nonexistent-id", 2)
     end
