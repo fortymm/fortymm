@@ -1,4 +1,11 @@
 defmodule Fortymm.Accounts.User do
+  @moduledoc """
+  Represents a user account in the system.
+
+  Handles user authentication, email and username validation, and password management.
+  Users can be assigned roles and have their email addresses confirmed.
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 

@@ -1,4 +1,11 @@
 defmodule Fortymm.Accounts.Role do
+  @moduledoc """
+  Represents a user role in the system.
+
+  Roles define sets of permissions that can be assigned to users.
+  Each role has a unique name and can be associated with multiple permissions.
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 

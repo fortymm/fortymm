@@ -1,10 +1,10 @@
 defmodule FortymmWeb.UserAuthTest do
   use FortymmWeb.ConnCase, async: true
 
-  alias Phoenix.LiveView
   alias Fortymm.Accounts
   alias Fortymm.Accounts.Scope
   alias FortymmWeb.UserAuth
+  alias Phoenix.LiveView
 
   import Fortymm.AccountsFixtures
 

@@ -5,9 +5,9 @@ defmodule Fortymm.Administration.Users do
   """
 
   import Ecto.Query, warn: false
-  alias Fortymm.Repo
-  alias Fortymm.Administration.Users.User
   alias Fortymm.Accounts.Role
+  alias Fortymm.Administration.Users.User
+  alias Fortymm.Repo
 
   @doc """
   Lists users with optional filtering, sorting, and pagination.

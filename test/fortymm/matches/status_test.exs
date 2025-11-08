@@ -1,7 +1,7 @@
 defmodule Fortymm.Matches.StatusTest do
   use ExUnit.Case, async: true
 
-  alias Fortymm.Matches.{Challenge, Status, Configuration}
+  alias Fortymm.Matches.{Challenge, Configuration, Status}
 
   describe "for_challenge/1" do
     test "returns :challenge_pending for pending challenges" do

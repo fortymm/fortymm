@@ -1,4 +1,11 @@
 defmodule FortymmWeb.UserAuth do
+  @moduledoc """
+  Handles user authentication and authorization for the application.
+
+  Provides plugs for authenticating users, managing sessions, and enforcing
+  authentication requirements on routes.
+  """
+
   use FortymmWeb, :verified_routes
 
   import Plug.Conn

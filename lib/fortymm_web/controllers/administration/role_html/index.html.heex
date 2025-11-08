@@ -1,0 +1,169 @@
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold">Role Management</h1>
+    <p class="text-base-content/70 mt-2">
+      Manage and view all roles in the system
+    </p>
+  </div>
+
+  <%!-- Filters Section --%>
+  <div class="card bg-base-100 mb-6">
+    <div class="card-body">
+      <form
+        method="get"
+        action={~p"/administration/roles"}
+        class="flex items-end gap-4"
+      >
+        <div class="form-control flex-1">
+          <label class="label" for="search">
+            <span class="label-text">Search</span>
+          </label>
+          <input
+            type="text"
+            name="search"
+            id="search"
+            value={@search}
+            placeholder="Role name or description..."
+            class="input input-bordered"
+          />
+        </div>
+
+        <div class="form-control">
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <.icon name="hero-magnifying-glass" class="w-4 h-4" /> Filter
+            </button>
+            <%= if @search do %>
+              <a href={~p"/administration/roles"} class="btn btn-ghost">
+                <.icon name="hero-x-mark" class="w-4 h-4" /> Clear
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <%!-- Roles Table --%>
+  <div class="card bg-base-100">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:id}
+                label="ID"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+              />
+            </th>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:name}
+                label="Name"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+              />
+            </th>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:description}
+                label="Description"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+              />
+            </th>
+            <th>Permissions</th>
+            <th>Users</th>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:inserted_at}
+                label="Created"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+              />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= if @roles == [] do %>
+            <tr>
+              <td colspan="6" class="text-center py-12">
+                <.icon name="hero-shield-check" class="w-12 h-12 mx-auto mb-3 opacity-40" />
+                <p class="text-lg font-medium">No roles found</p>
+                <%= if @search do %>
+                  <p class="mt-1 text-sm opacity-70">Try adjusting your search</p>
+                <% end %>
+              </td>
+            </tr>
+          <% else %>
+            <%= for role <- @roles do %>
+              <tr>
+                <td class="font-mono">{role.id}</td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <.icon name="hero-shield-check" class="w-5 h-5 text-primary" />
+                    <span class="font-medium">{role.name}</span>
+                  </div>
+                </td>
+                <td>
+                  <%= if role.description do %>
+                    <span class="opacity-70">{role.description}</span>
+                  <% else %>
+                    <span class="italic opacity-40">No description</span>
+                  <% end %>
+                </td>
+                <td>
+                  <%= if role.permissions && role.permissions != [] do %>
+                    <div class="flex flex-wrap gap-1">
+                      <%= for permission <- Enum.take(role.permissions, 3) do %>
+                        <span class="badge badge-sm badge-outline">{permission.name}</span>
+                      <% end %>
+                      <%= if length(role.permissions) > 3 do %>
+                        <span class="badge badge-sm badge-ghost">
+                          +{length(role.permissions) - 3} more
+                        </span>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <span class="italic opacity-40">No permissions</span>
+                  <% end %>
+                </td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <.icon name="hero-user-group" class="w-4 h-4 opacity-50" />
+                    <span class="font-semibold">{Map.get(role, :user_count, 0)}</span>
+                  </div>
+                </td>
+                <td class="opacity-70">{Calendar.strftime(role.inserted_at, "%b %d, %Y")}</td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%!-- Pagination --%>
+    <%= if @total > 0 do %>
+      <.pagination_links
+        conn={@conn}
+        page={@page}
+        per_page={@per_page}
+        total={@total}
+        total_pages={@total_pages}
+        sort_by={@sort_by}
+        sort_order={@sort_order}
+        search={@search}
+      />
+    <% end %>
+  </div>
+</div>

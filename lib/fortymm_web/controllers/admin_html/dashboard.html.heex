@@ -22,14 +22,31 @@
       </div>
     </div>
 
-    <%!-- Roles & Permissions Card --%>
+    <%!-- Roles Card --%>
     <div class="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow">
       <div class="card-body">
         <h2 class="card-title">
-          <.icon name="hero-shield-check" class="size-6 text-primary" /> Roles & Permissions
+          <.icon name="hero-shield-check" class="size-6 text-primary" /> Roles
         </h2>
         <p class="text-sm opacity-75">
-          Configure roles and assign permissions to control access.
+          Manage user roles and their associated permissions.
+        </p>
+        <div class="card-actions justify-end mt-4">
+          <a href={~p"/administration/roles"} class="btn btn-primary btn-sm">
+            Manage Roles
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Permissions Card --%>
+    <div class="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow">
+      <div class="card-body">
+        <h2 class="card-title">
+          <.icon name="hero-key" class="size-6 text-primary" /> Permissions
+        </h2>
+        <p class="text-sm opacity-75">
+          Define and manage system permissions and capabilities.
         </p>
         <div class="card-actions justify-end mt-4">
           <button class="btn btn-primary btn-sm" disabled>
