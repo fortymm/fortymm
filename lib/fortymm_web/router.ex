@@ -66,6 +66,12 @@ defmodule FortymmWeb.Router do
 
   ## Administration routes
 
+  scope "/administration", FortymmWeb.Administration, as: :administration do
+    pipe_through [:browser, :require_authenticated_user]
+
+    get "/users", UserController, :index
+  end
+
   scope "/", FortymmWeb do
     pipe_through [:browser, :require_authenticated_user]
 
