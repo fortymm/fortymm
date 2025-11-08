@@ -5,11 +5,11 @@ defmodule Fortymm.Matches do
 
   alias Fortymm.Matches.{
     Challenge,
-    ChallengeAcceptance,
     ChallengeCancellation,
     ChallengeRejection,
     ChallengeStore,
     ChallengeUpdates,
+    Creation,
     Status
   }
 
@@ -154,21 +154,27 @@ defmodule Fortymm.Matches do
   end
 
   @doc """
-  Accepts a challenge after validating acceptance rules.
+  Accepts a challenge after validating acceptance rules and creates a match.
 
   Validates that:
   - The challenge exists
   - The challenge is in "pending" status
   - The acceptor is different from the challenge creator
 
-  Returns `{:ok, challenge}` if validation passes and the challenge is accepted.
+  Creates a pending match with:
+  - The challenge's configuration
+  - Two participants: the challenge creator and the acceptor
+
+  Marks the challenge as accepted.
+
+  Returns `{:ok, match}` if validation passes, the match is created, and the challenge is accepted.
   Returns `{:error, :not_found}` if the challenge doesn't exist.
   Returns `{:error, changeset}` if validation fails.
 
   ## Examples
 
       iex> accept_challenge("challenge-id", 2)
-      {:ok, %Challenge{status: "accepted"}}
+      {:ok, %Match{status: "pending", participants: [...]}}
 
       iex> accept_challenge("challenge-id", 1) # same as creator
       {:error, %Ecto.Changeset{}}
@@ -177,16 +183,20 @@ defmodule Fortymm.Matches do
   def accept_challenge(challenge_id, acceptor_id) do
     case get_challenge(challenge_id) do
       {:ok, challenge} ->
-        acceptance_changeset =
-          ChallengeAcceptance.changeset(%ChallengeAcceptance{}, %{
-            challenge: challenge,
-            acceptor_id: acceptor_id
-          })
+        case Creation.from_challenge(challenge, acceptor_id) do
+          {:ok, match} ->
+            case update_challenge(challenge_id, %{status: "accepted"}) do
+              {:ok, _updated_challenge} ->
+                {:ok, match}
 
-        if acceptance_changeset.valid? do
-          update_challenge(challenge_id, %{status: "accepted"})
-        else
-          {:error, acceptance_changeset}
+              {:error, _reason} = error ->
+                # Match was created but challenge update failed
+                # This could happen due to concurrent modifications
+                error
+            end
+
+          {:error, _changeset} = error ->
+            error
         end
 
       {:error, :not_found} = error ->

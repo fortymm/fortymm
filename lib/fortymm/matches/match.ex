@@ -10,12 +10,13 @@ defmodule Fortymm.Matches.Match do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Fortymm.Matches.Configuration
+  alias Fortymm.Matches.{Configuration, Participant}
 
   @valid_statuses ["pending", "in_progress", "canceled", "aborted", "complete"]
 
   embedded_schema do
     embeds_one :match_configuration, Configuration
+    embeds_many :participants, Participant
     field :status, :string, default: "pending"
   end
 
@@ -35,10 +36,29 @@ defmodule Fortymm.Matches.Match do
     match
     |> cast(attrs, [:status])
     |> cast_embed(:match_configuration, required: true)
+    |> cast_embed(:participants)
     |> validate_required([:status])
     |> validate_inclusion(:status, @valid_statuses,
       message: "must be one of: #{Enum.join(@valid_statuses, ", ")}"
     )
+    |> validate_participants_count()
+  end
+
+  defp validate_participants_count(changeset) do
+    case get_field(changeset, :participants) do
+      participants when is_list(participants) and length(participants) == 2 ->
+        changeset
+
+      participants when is_list(participants) ->
+        add_error(
+          changeset,
+          :participants,
+          "must have exactly 2 participants, got #{length(participants)}"
+        )
+
+      nil ->
+        add_error(changeset, :participants, "must have exactly 2 participants")
+    end
   end
 
   @doc """

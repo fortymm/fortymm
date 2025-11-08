@@ -726,10 +726,15 @@ defmodule Fortymm.MatchesTest do
           created_by_id: 1
         })
 
-      assert {:ok, accepted_challenge} = Matches.accept_challenge(challenge.id, 2)
-      assert accepted_challenge.status == "accepted"
-      assert accepted_challenge.id == challenge.id
-      assert accepted_challenge.created_by_id == 1
+      assert {:ok, match} = Matches.accept_challenge(challenge.id, 2)
+      assert match.status == "pending"
+      assert match.match_configuration.length_in_games == 3
+      assert match.match_configuration.rated == false
+      assert length(match.participants) == 2
+
+      # Verify the challenge was marked as accepted
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.status == "accepted"
     end
 
     test "returns error when challenge does not exist" do
@@ -823,9 +828,14 @@ defmodule Fortymm.MatchesTest do
           created_by_id: 999
         })
 
-      assert {:ok, accepted} = Matches.accept_challenge(challenge.id, 1000)
-      assert accepted.status == "accepted"
-      assert accepted.created_by_id == 999
+      assert {:ok, match} = Matches.accept_challenge(challenge.id, 1000)
+      assert match.status == "pending"
+      assert length(match.participants) == 2
+
+      # Verify the challenge was marked as accepted
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.status == "accepted"
+      assert updated_challenge.created_by_id == 999
     end
 
     test "persists acceptance in ETS" do
@@ -848,12 +858,19 @@ defmodule Fortymm.MatchesTest do
           created_by_id: 42
         })
 
-      {:ok, accepted} = Matches.accept_challenge(challenge.id, 100)
+      {:ok, match} = Matches.accept_challenge(challenge.id, 100)
 
-      assert accepted.status == "accepted"
-      assert accepted.configuration.length_in_games == 5
-      assert accepted.configuration.rated == true
-      assert accepted.created_by_id == 42
+      # Verify the match was created correctly
+      assert match.status == "pending"
+      assert match.match_configuration.length_in_games == 5
+      assert match.match_configuration.rated == true
+
+      # Verify the challenge was updated but other fields remain unchanged
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.status == "accepted"
+      assert updated_challenge.configuration.length_in_games == 5
+      assert updated_challenge.configuration.rated == true
+      assert updated_challenge.created_by_id == 42
     end
   end
 
