@@ -47,7 +47,7 @@
             <button type="submit" class="btn btn-primary">
               <.icon name="hero-magnifying-glass" class="w-4 h-4" /> Filter
             </button>
-            <%= if @search || @role_id do %>
+            <%= if (@search && @search != "") || (@role_id && @role_id != "") do %>
               <a href={~p"/administration/users"} class="btn btn-ghost">
                 <.icon name="hero-x-mark" class="w-4 h-4" /> Clear
               </a>

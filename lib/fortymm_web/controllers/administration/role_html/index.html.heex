@@ -33,7 +33,7 @@
             <button type="submit" class="btn btn-primary">
               <.icon name="hero-magnifying-glass" class="w-4 h-4" /> Filter
             </button>
-            <%= if @search do %>
+            <%= if @search && @search != "" do %>
               <a href={~p"/administration/roles"} class="btn btn-ghost">
                 <.icon name="hero-x-mark" class="w-4 h-4" /> Clear
               </a>

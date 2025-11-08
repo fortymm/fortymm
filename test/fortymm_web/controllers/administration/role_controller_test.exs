@@ -193,6 +193,18 @@ defmodule FortymmWeb.Administration.RoleControllerTest do
       assert html =~ "Clear"
     end
 
+    test "does not display clear filter button when search is empty", %{conn: conn} do
+      admin = admin_user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(admin)
+        |> get(~p"/administration/roles?search=")
+
+      html = html_response(conn, 200)
+      refute html =~ "Clear"
+    end
+
     test "displays empty state when no roles match search", %{conn: conn} do
       admin = admin_user_fixture()
 
