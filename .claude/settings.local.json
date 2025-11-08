@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(mix test:*)",
-      "Bash(mix precommit:*)"
+      "Bash(mix precommit:*)",
+      "Bash(mix credo:*)"
     ],
     "deny": [],
     "ask": []

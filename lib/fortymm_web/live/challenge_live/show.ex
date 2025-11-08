@@ -228,39 +228,41 @@ defmodule FortymmWeb.ChallengeLive.Show do
   defp redirect_based_on_participation(socket, challenge, current_user_id) do
     match_id = challenge.match_id
 
-    cond do
-      is_nil(match_id) ->
-        # Error condition: challenge is accepted but no match_id
+    if is_nil(match_id) do
+      # Error condition: challenge is accepted but no match_id
+      {:ok,
+       socket
+       |> put_flash(:error, "Something went wrong. Please try again.")
+       |> push_navigate(to: ~p"/dashboard")}
+    else
+      redirect_to_match(socket, match_id, current_user_id)
+    end
+  end
+
+  defp redirect_to_match(socket, match_id, current_user_id) do
+    case Matches.get_match(match_id) do
+      {:ok, match} ->
+        is_participant =
+          Enum.any?(match.participants, fn p -> p.user_id == current_user_id end)
+
+        if is_participant do
+          {:ok,
+           socket
+           |> put_flash(:info, "Challenge accepted! Time to enter scores")
+           |> push_navigate(to: ~p"/matches/#{match_id}/games/1/scores/new")}
+        else
+          {:ok,
+           socket
+           |> put_flash(:info, "Challenge accepted! The match has begun")
+           |> push_navigate(to: ~p"/matches/#{match_id}")}
+        end
+
+      {:error, :not_found} ->
+        # Fallback to match page if match not found
         {:ok,
          socket
-         |> put_flash(:error, "Something went wrong. Please try again.")
-         |> push_navigate(to: ~p"/dashboard")}
-
-      true ->
-        case Matches.get_match(match_id) do
-          {:ok, match} ->
-            is_participant =
-              Enum.any?(match.participants, fn p -> p.user_id == current_user_id end)
-
-            if is_participant do
-              {:ok,
-               socket
-               |> put_flash(:info, "Challenge accepted! Time to enter scores")
-               |> push_navigate(to: ~p"/matches/#{match_id}/games/1/scores/new")}
-            else
-              {:ok,
-               socket
-               |> put_flash(:info, "Challenge accepted! The match has begun")
-               |> push_navigate(to: ~p"/matches/#{match_id}")}
-            end
-
-          {:error, :not_found} ->
-            # Fallback to match page if match not found
-            {:ok,
-             socket
-             |> put_flash(:info, "Challenge accepted! The match has begun")
-             |> push_navigate(to: ~p"/matches/#{match_id}")}
-        end
+         |> put_flash(:info, "Challenge accepted! The match has begun")
+         |> push_navigate(to: ~p"/matches/#{match_id}")}
     end
   end
 

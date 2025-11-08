@@ -1,4 +1,11 @@
 defmodule Fortymm.Accounts.Permission do
+  @moduledoc """
+  Represents a system permission.
+
+  Permissions define specific capabilities or access rights within the application.
+  They are assigned to roles, which are then assigned to users.
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 

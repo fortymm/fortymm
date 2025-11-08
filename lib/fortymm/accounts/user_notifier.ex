@@ -1,8 +1,15 @@
 defmodule Fortymm.Accounts.UserNotifier do
+  @moduledoc """
+  Sends email notifications to users for authentication events.
+
+  Handles sending confirmation instructions, password reset links,
+  and email update notifications using Swoosh.
+  """
+
   import Swoosh.Email
 
-  alias Fortymm.Mailer
   alias Fortymm.Accounts.User
+  alias Fortymm.Mailer
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do

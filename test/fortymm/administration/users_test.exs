@@ -1,8 +1,8 @@
 defmodule Fortymm.Administration.UsersTest do
   use Fortymm.DataCase
 
-  alias Fortymm.Administration.Users
   alias Fortymm.AccountsFixtures
+  alias Fortymm.Administration.Users
 
   describe "list_users/1" do
     setup do

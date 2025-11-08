@@ -6,7 +6,7 @@ defmodule Fortymm.Accounts do
   import Ecto.Query, warn: false
   alias Fortymm.Repo
 
-  alias Fortymm.Accounts.{User, UserToken, UserNotifier}
+  alias Fortymm.Accounts.{User, UserNotifier, UserToken}
 
   ## Database getters
 

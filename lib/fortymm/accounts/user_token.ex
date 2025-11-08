@@ -1,4 +1,11 @@
 defmodule Fortymm.Accounts.UserToken do
+  @moduledoc """
+  Manages user authentication tokens for sessions, email confirmations, and password resets.
+
+  Tokens are hashed before storage for security and have specific validity periods
+  based on their context (session, magic link, email change).
+  """
+
   use Ecto.Schema
   import Ecto.Query
   alias Fortymm.Accounts.UserToken

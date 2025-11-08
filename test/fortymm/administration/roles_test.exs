@@ -1,8 +1,8 @@
 defmodule Fortymm.Administration.RolesTest do
   use Fortymm.DataCase
 
-  alias Fortymm.Administration.Roles
   alias Fortymm.AccountsFixtures
+  alias Fortymm.Administration.Roles
 
   describe "list_roles/1" do
     setup do

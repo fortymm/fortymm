@@ -67,7 +67,8 @@ defmodule Fortymm.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:qr_code, "~> 3.1"}
+      {:qr_code, "~> 3.1"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -90,7 +91,13 @@ defmodule Fortymm.MixProject do
         "esbuild fortymm --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warning-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "test",
+        "credo"
+      ]
     ]
   end
 end
