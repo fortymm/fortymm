@@ -3,11 +3,19 @@ defmodule Fortymm.Matches.MatchTest do
 
   alias Fortymm.Matches.Match
 
+  defp valid_participants do
+    [
+      %{user_id: 1, participant_number: 1},
+      %{user_id: 2, participant_number: 2}
+    ]
+  end
+
   describe "changeset/2" do
     test "returns a valid changeset with correct data" do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3, rated: true},
+          participants: valid_participants(),
           status: "pending"
         })
 
@@ -31,6 +39,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
           status: "pending"
         })
 
@@ -43,6 +52,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3, rated: false},
+          participants: valid_participants(),
           status: "pending"
         })
 
@@ -55,6 +65,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 5, rated: true},
+          participants: valid_participants(),
           status: "pending"
         })
 
@@ -73,7 +84,8 @@ defmodule Fortymm.Matches.MatchTest do
     test "defaults status to pending when not provided" do
       changeset =
         Match.changeset(%Match{}, %{
-          match_configuration: %{length_in_games: 3}
+          match_configuration: %{length_in_games: 3},
+          participants: valid_participants()
         })
 
       assert changeset.valid?
@@ -84,6 +96,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
           status: "pending"
         })
 
@@ -95,6 +108,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
           status: "in_progress"
         })
 
@@ -106,6 +120,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
           status: "canceled"
         })
 
@@ -117,6 +132,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
           status: "aborted"
         })
 
@@ -128,6 +144,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
           status: "complete"
         })
 
@@ -153,6 +170,7 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
           status: ""
         })
 
@@ -180,6 +198,7 @@ defmodule Fortymm.Matches.MatchTest do
         changeset =
           Match.changeset(%Match{}, %{
             match_configuration: %{length_in_games: 5, rated: true},
+            participants: valid_participants(),
             status: status
           })
 
@@ -195,6 +214,7 @@ defmodule Fortymm.Matches.MatchTest do
         changeset =
           Match.changeset(%Match{}, %{
             match_configuration: %{length_in_games: length},
+            participants: valid_participants(),
             status: "pending"
           })
 
@@ -220,18 +240,21 @@ defmodule Fortymm.Matches.MatchTest do
       changeset1 =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 1, rated: true},
+          participants: valid_participants(),
           status: "pending"
         })
 
       changeset2 =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 7, rated: false},
+          participants: valid_participants(),
           status: "complete"
         })
 
       changeset3 =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 5, rated: true},
+          participants: valid_participants(),
           status: "in_progress"
         })
 
@@ -255,12 +278,146 @@ defmodule Fortymm.Matches.MatchTest do
       changeset =
         Match.changeset(%Match{}, %{
           match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
           status: "pending",
           unknown_field: "value"
         })
 
       assert changeset.valid?
       refute Map.has_key?(changeset.changes, :unknown_field)
+    end
+  end
+
+  describe "participants validation" do
+    test "requires exactly 2 participants" do
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          participants: valid_participants(),
+          status: "pending"
+        })
+
+      assert changeset.valid?
+      participants = Ecto.Changeset.get_field(changeset, :participants)
+      assert length(participants) == 2
+    end
+
+    test "rejects match with 0 participants" do
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          participants: [],
+          status: "pending"
+        })
+
+      refute changeset.valid?
+      assert "must have exactly 2 participants, got 0" in errors_on(changeset).participants
+    end
+
+    test "rejects match with 1 participant" do
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          participants: [%{user_id: 1, participant_number: 1}],
+          status: "pending"
+        })
+
+      refute changeset.valid?
+      assert "must have exactly 2 participants, got 1" in errors_on(changeset).participants
+    end
+
+    test "rejects match with 3 participants" do
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          participants: [
+            %{user_id: 1, participant_number: 1},
+            %{user_id: 2, participant_number: 2},
+            %{user_id: 3, participant_number: 1}
+          ],
+          status: "pending"
+        })
+
+      refute changeset.valid?
+      assert "must have exactly 2 participants, got 3" in errors_on(changeset).participants
+    end
+
+    test "rejects match without participants field" do
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          status: "pending"
+        })
+
+      refute changeset.valid?
+      # When participants field is missing, it defaults to empty list, so we get "got 0"
+      assert "must have exactly 2 participants, got 0" in errors_on(changeset).participants
+    end
+
+    test "validates participant data" do
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          participants: [
+            %{user_id: 10, participant_number: 1},
+            %{user_id: 20, participant_number: 2}
+          ],
+          status: "pending"
+        })
+
+      assert changeset.valid?
+      participants = Ecto.Changeset.get_field(changeset, :participants)
+      assert Enum.at(participants, 0).user_id == 10
+      assert Enum.at(participants, 0).participant_number == 1
+      assert Enum.at(participants, 1).user_id == 20
+      assert Enum.at(participants, 1).participant_number == 2
+    end
+
+    test "rejects participants with invalid participant_number" do
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          participants: [
+            %{user_id: 1, participant_number: 1},
+            %{user_id: 2, participant_number: 3}
+          ],
+          status: "pending"
+        })
+
+      refute changeset.valid?
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert Map.has_key?(errors, :participants)
+    end
+
+    test "rejects participants without user_id" do
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          participants: [
+            %{participant_number: 1},
+            %{user_id: 2, participant_number: 2}
+          ],
+          status: "pending"
+        })
+
+      refute changeset.valid?
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+      assert Map.has_key?(errors, :participants)
+    end
+
+    test "accepts participants with same user_id (rematch scenario)" do
+      # Note: Business logic might prevent this, but the schema allows it
+      changeset =
+        Match.changeset(%Match{}, %{
+          match_configuration: %{length_in_games: 3},
+          participants: [
+            %{user_id: 1, participant_number: 1},
+            %{user_id: 1, participant_number: 2}
+          ],
+          status: "pending"
+        })
+
+      assert changeset.valid?
     end
   end
 
