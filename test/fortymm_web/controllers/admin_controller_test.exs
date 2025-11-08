@@ -85,7 +85,7 @@ defmodule FortymmWeb.AdminControllerTest do
       assert html =~ "You have full administrative access to this application"
     end
 
-    test "displays coming soon placeholders", %{conn: conn} do
+    test "displays manage users link", %{conn: conn} do
       admin = admin_user_fixture()
 
       conn =
@@ -94,6 +94,20 @@ defmodule FortymmWeb.AdminControllerTest do
         |> get(~p"/administration")
 
       html = html_response(conn, 200)
+      assert html =~ "Manage Users"
+      assert html =~ "/administration/users"
+    end
+
+    test "displays coming soon placeholders for other features", %{conn: conn} do
+      admin = admin_user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(admin)
+        |> get(~p"/administration")
+
+      html = html_response(conn, 200)
+      # Roles & Permissions and System Settings still show Coming Soon
       assert html =~ "Coming Soon"
       assert html =~ "Coming soon"
     end
