@@ -10,6 +10,7 @@ defmodule Fortymm.Matches do
     ChallengeStore,
     ChallengeUpdates,
     Creation,
+    MatchStore,
     Status
   }
 
@@ -181,26 +182,11 @@ defmodule Fortymm.Matches do
 
   """
   def accept_challenge(challenge_id, acceptor_id) do
-    case get_challenge(challenge_id) do
-      {:ok, challenge} ->
-        case Creation.from_challenge(challenge, acceptor_id) do
-          {:ok, match} ->
-            case update_challenge(challenge_id, %{status: "accepted"}) do
-              {:ok, _updated_challenge} ->
-                {:ok, match}
-
-              {:error, _reason} = error ->
-                # Match was created but challenge update failed
-                # This could happen due to concurrent modifications
-                error
-            end
-
-          {:error, _changeset} = error ->
-            error
-        end
-
-      {:error, :not_found} = error ->
-        error
+    with {:ok, challenge} <- get_challenge(challenge_id),
+         {:ok, match} <- Creation.from_challenge(challenge, acceptor_id),
+         {:ok, _updated_challenge} <-
+           update_challenge(challenge_id, %{status: "accepted", match_id: match.id}) do
+      {:ok, match}
     end
   end
 
@@ -284,6 +270,25 @@ defmodule Fortymm.Matches do
       {:error, :not_found} = error ->
         error
     end
+  end
+
+  @doc """
+  Gets a match by ID from ETS.
+
+  Returns `{:ok, match}` if found.
+  Returns `{:error, :not_found}` if not found.
+
+  ## Examples
+
+      iex> get_match("valid-id")
+      {:ok, %Match{}}
+
+      iex> get_match("invalid-id")
+      {:error, :not_found}
+
+  """
+  def get_match(id) do
+    MatchStore.get(id)
   end
 
   defp generate_id do

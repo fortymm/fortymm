@@ -609,6 +609,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
       conn: conn
     } do
       creator = user_fixture()
+      acceptor = user_fixture()
 
       {:ok, challenge} =
         Matches.create_challenge(%{
@@ -617,7 +618,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
         })
 
       # Accept the challenge
-      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+      {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
 
       # Creator tries to view the waiting room
       assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
@@ -625,14 +626,16 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
                |> log_in_user(creator)
                |> live(~p"/challenges/#{challenge.id}/waiting_room")
 
-      assert path == ~p"/matches/#{challenge.id}/games/1/scores/new"
+      assert path == ~p"/matches/#{match.id}/games/1/scores/new"
       assert flash == %{"info" => "Challenge accepted! Time to enter scores"}
     end
 
-    test "non-creator viewing accepted challenge redirects to match page with flash", %{
-      conn: conn
-    } do
+    test "non-participant viewer viewing accepted challenge redirects to match page with flash",
+         %{
+           conn: conn
+         } do
       creator = user_fixture()
+      acceptor = user_fixture()
       viewer = user_fixture()
 
       {:ok, challenge} =
@@ -642,15 +645,15 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
         })
 
       # Accept the challenge
-      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+      {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
 
-      # Non-creator tries to view the waiting room
+      # Non-participant viewer tries to view the waiting room
       assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
                conn
                |> log_in_user(viewer)
                |> live(~p"/challenges/#{challenge.id}/waiting_room")
 
-      assert path == ~p"/matches/#{challenge.id}"
+      assert path == ~p"/matches/#{match.id}"
       assert flash == %{"info" => "Challenge accepted! The match has begun"}
     end
   end
@@ -785,6 +788,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
       conn: conn
     } do
       creator = user_fixture()
+      acceptor = user_fixture()
 
       {:ok, challenge} =
         Matches.create_challenge(%{
@@ -798,14 +802,14 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
         |> log_in_user(creator)
         |> live(~p"/challenges/#{challenge.id}/waiting_room")
 
-      # Challenge is accepted by someone
-      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+      # Challenge is accepted by acceptor
+      {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
 
       # Give PubSub a moment to deliver the message
       Process.sleep(50)
 
       # Creator should be redirected to scoring page
-      assert_redirect(lv, ~p"/matches/#{challenge.id}/games/1/scores/new")
+      assert_redirect(lv, ~p"/matches/#{match.id}/games/1/scores/new")
     end
 
     test "creator on waiting room redirects to dashboard when challenge is cancelled", %{
