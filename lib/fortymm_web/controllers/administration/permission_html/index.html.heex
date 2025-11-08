@@ -1,0 +1,160 @@
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold">Permission Management</h1>
+    <p class="text-base-content/70 mt-2">
+      Manage and view all permissions in the system
+    </p>
+  </div>
+
+  <%!-- Filters Section --%>
+  <div class="card bg-base-100 mb-6">
+    <div class="card-body">
+      <form
+        method="get"
+        action={~p"/administration/permissions"}
+        class="grid grid-cols-1 gap-4 md:grid-cols-2"
+      >
+        <div class="form-control">
+          <label class="label" for="search">
+            <span class="label-text">Search</span>
+          </label>
+          <input
+            type="text"
+            name="search"
+            id="search"
+            value={@search}
+            placeholder="Name, slug, or description..."
+            class="input input-bordered"
+          />
+        </div>
+
+        <div class="form-control md:self-end">
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <.icon name="hero-magnifying-glass" class="w-4 h-4" /> Filter
+            </button>
+            <%= if @search do %>
+              <a href={~p"/administration/permissions"} class="btn btn-ghost">
+                <.icon name="hero-x-mark" class="w-4 h-4" /> Clear
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <%!-- Permissions Table --%>
+  <div class="card bg-base-100">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:id}
+                label="ID"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+              />
+            </th>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:name}
+                label="Name"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+              />
+            </th>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:slug}
+                label="Slug"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+              />
+            </th>
+            <th>Description</th>
+            <th>Roles</th>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:inserted_at}
+                label="Created"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+              />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= if @permissions == [] do %>
+            <tr>
+              <td colspan="6" class="text-center py-12">
+                <.icon name="hero-key" class="w-12 h-12 mx-auto mb-3 opacity-40" />
+                <p class="text-lg font-medium">No permissions found</p>
+                <%= if @search do %>
+                  <p class="mt-1 text-sm opacity-70">Try adjusting your search</p>
+                <% end %>
+              </td>
+            </tr>
+          <% else %>
+            <%= for permission <- @permissions do %>
+              <tr>
+                <td class="font-mono">{permission.id}</td>
+                <td>
+                  <div class="font-medium">{permission.name}</div>
+                </td>
+                <td>
+                  <code class="px-2 py-1 bg-base-200 rounded text-sm">{permission.slug}</code>
+                </td>
+                <td>
+                  <%= if permission.description do %>
+                    <span class="text-sm opacity-80">{permission.description}</span>
+                  <% else %>
+                    <span class="text-sm opacity-40 italic">No description</span>
+                  <% end %>
+                </td>
+                <td>
+                  <%= if permission.roles != [] do %>
+                    <div class="flex flex-wrap gap-1">
+                      <%= for role <- permission.roles do %>
+                        <span class="badge badge-sm badge-info">{role.name}</span>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <span class="badge badge-sm badge-ghost">No roles</span>
+                  <% end %>
+                </td>
+                <td class="opacity-70">
+                  {Calendar.strftime(permission.inserted_at, "%b %d, %Y")}
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%!-- Pagination --%>
+    <%= if @total > 0 do %>
+      <.pagination_links
+        conn={@conn}
+        page={@page}
+        per_page={@per_page}
+        total={@total}
+        total_pages={@total_pages}
+        sort_by={@sort_by}
+        sort_order={@sort_order}
+        search={@search}
+      />
+    <% end %>
+  </div>
+</div>
