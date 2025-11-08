@@ -298,11 +298,13 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
 
       lv |> element("button[phx-click='accept_challenge']") |> render_click()
 
-      assert_redirect(lv, ~p"/dashboard")
-
       # Verify challenge status is updated to accepted
       {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
       assert updated_challenge.status == "accepted"
+      assert updated_challenge.match_id
+
+      # Acceptor should be redirected to scoring page
+      assert_redirect(lv, ~p"/matches/#{updated_challenge.match_id}/games/1/scores/new")
     end
 
     test "declining challenge updates status to rejected", %{conn: conn} do
@@ -537,7 +539,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       assert_redirect(lv, ~p"/dashboard")
     end
 
-    test "accepting challenge redirects to dashboard on success", %{conn: conn} do
+    test "accepting challenge redirects to scoring page on success", %{conn: conn} do
       creator = user_fixture()
       acceptor = user_fixture()
 
@@ -554,8 +556,10 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
 
       lv |> element("button[phx-click='accept_challenge']") |> render_click()
 
-      # Should redirect to dashboard on success
-      assert_redirect(lv, ~p"/dashboard")
+      # Acceptor should be redirected to scoring page
+      {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
+      assert updated_challenge.match_id
+      assert_redirect(lv, ~p"/matches/#{updated_challenge.match_id}/games/1/scores/new")
     end
 
     test "declining challenge redirects to dashboard on success", %{conn: conn} do
@@ -585,6 +589,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       conn: conn
     } do
       creator = user_fixture()
+      acceptor = user_fixture()
 
       {:ok, challenge} =
         Matches.create_challenge(%{
@@ -593,7 +598,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
         })
 
       # Accept the challenge
-      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+      {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
 
       # Creator tries to view the show page
       assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
@@ -601,11 +606,11 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
                |> log_in_user(creator)
                |> live(~p"/challenges/#{challenge.id}")
 
-      assert path == ~p"/matches/#{challenge.id}/games/1/scores/new"
+      assert path == ~p"/matches/#{match.id}/games/1/scores/new"
       assert flash == %{"info" => "Challenge accepted! Time to enter scores"}
     end
 
-    test "non-creator viewing accepted challenge redirects to match page with flash", %{
+    test "acceptor viewing accepted challenge redirects to scoring page with flash", %{
       conn: conn
     } do
       creator = user_fixture()
@@ -618,16 +623,16 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
         })
 
       # Accept the challenge
-      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+      {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
 
-      # Non-creator tries to view the show page
+      # Acceptor tries to view the show page
       assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
                conn
                |> log_in_user(acceptor)
                |> live(~p"/challenges/#{challenge.id}")
 
-      assert path == ~p"/matches/#{challenge.id}"
-      assert flash == %{"info" => "Challenge accepted! The match has begun"}
+      assert path == ~p"/matches/#{match.id}/games/1/scores/new"
+      assert flash == %{"info" => "Challenge accepted! Time to enter scores"}
     end
   end
 
@@ -760,7 +765,9 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       assert html =~ "Best of 5"
     end
 
-    test "creator on show page redirects to scoring when challenge is accepted", %{conn: conn} do
+    test "acceptor on show page redirects to scoring when challenge is accepted", %{
+      conn: conn
+    } do
       creator = user_fixture()
       acceptor = user_fixture()
 
@@ -770,32 +777,27 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
           created_by_id: creator.id
         })
 
-      # For this test, we need to mount the creator on the waiting room first
-      # then have them somehow end up on the show page (which normally wouldn't happen,
-      # but we're testing the handle_info logic)
-      # Actually, looking at the code, the creator gets redirected on mount, so they
-      # can't be on the show page. Let me test a different scenario.
-
-      # Non-creator is viewing the show page
+      # Acceptor is viewing the show page
       {:ok, lv, _html} =
         conn
         |> log_in_user(acceptor)
         |> live(~p"/challenges/#{challenge.id}")
 
-      # Challenge is accepted
-      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+      # Challenge is accepted (via the proper flow which sets match_id)
+      {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
 
       # Give PubSub a moment to deliver the message
       Process.sleep(50)
 
-      # Non-creator should be redirected to match page
-      assert_redirect(lv, ~p"/matches/#{challenge.id}")
+      # Acceptor should be redirected to scoring page
+      assert_redirect(lv, ~p"/matches/#{match.id}/games/1/scores/new")
     end
 
-    test "non-creator on show page redirects to match when challenge is accepted", %{
+    test "non-participant viewer on show page redirects to match when challenge is accepted", %{
       conn: conn
     } do
       creator = user_fixture()
+      acceptor = user_fixture()
       viewer = user_fixture()
 
       {:ok, challenge} =
@@ -810,14 +812,14 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
         |> log_in_user(viewer)
         |> live(~p"/challenges/#{challenge.id}")
 
-      # Challenge is accepted by someone
-      {:ok, _} = Matches.update_challenge(challenge.id, %{status: "accepted"})
+      # Challenge is accepted by acceptor
+      {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
 
       # Give PubSub a moment to deliver the message
       Process.sleep(50)
 
-      # Viewer should be redirected to match page
-      assert_redirect(lv, ~p"/matches/#{challenge.id}")
+      # Viewer (non-participant) should be redirected to match page
+      assert_redirect(lv, ~p"/matches/#{match.id}")
     end
 
     test "creator on show page redirects to dashboard when challenge is cancelled", %{

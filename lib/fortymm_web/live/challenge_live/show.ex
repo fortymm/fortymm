@@ -77,11 +77,11 @@ defmodule FortymmWeb.ChallengeLive.Show do
     challenge_id = socket.assigns.challenge.id
 
     case Matches.accept_challenge(challenge_id, current_user_id) do
-      {:ok, _challenge} ->
+      {:ok, match} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Challenge accepted!")
-         |> push_navigate(to: ~p"/dashboard")}
+         |> put_flash(:info, "Challenge accepted! Time to enter scores")
+         |> push_navigate(to: ~p"/matches/#{match.id}/games/1/scores/new")}
 
       {:error, :not_found} ->
         {:noreply,
@@ -185,12 +185,9 @@ defmodule FortymmWeb.ChallengeLive.Show do
 
         {:ok, socket}
 
-      # Accepted: creator redirected to scoring
-      {:challenge_accepted, true} ->
-        {:ok,
-         socket
-         |> put_flash(:info, "Challenge accepted! Time to enter scores")
-         |> push_navigate(to: ~p"/matches/#{challenge.id}/games/1/scores/new")}
+      # Accepted: redirect based on participation
+      {:challenge_accepted, _} ->
+        redirect_based_on_participation(socket, challenge, current_user.id)
 
       # Common redirects: use utility function
       _ ->
@@ -198,24 +195,22 @@ defmodule FortymmWeb.ChallengeLive.Show do
     end
   end
 
-  defp apply_status_redirect(socket, challenge, status, is_creator) do
-    case {status, is_creator} do
-      # Accepted: non-creator redirected to match page
-      {:challenge_accepted, false} ->
-        {:ok,
-         socket
-         |> put_flash(:info, "Challenge accepted! The match has begun")
-         |> push_navigate(to: ~p"/matches/#{challenge.id}")}
+  defp apply_status_redirect(socket, challenge, status, _is_creator) do
+    case status do
+      # Accepted: redirect based on participation
+      :challenge_accepted ->
+        current_user_id = socket.assigns.current_scope.user.id
+        redirect_based_on_participation(socket, challenge, current_user_id)
 
       # Cancelled: anyone redirected to dashboard
-      {:challenge_cancelled, _} ->
+      :challenge_cancelled ->
         {:ok,
          socket
          |> put_flash(:info, "This challenge has been cancelled")
          |> push_navigate(to: ~p"/dashboard")}
 
       # Rejected: anyone redirected to dashboard
-      {:challenge_rejected, _} ->
+      :challenge_rejected ->
         {:ok,
          socket
          |> put_flash(:info, "This challenge has been declined")
@@ -227,6 +222,45 @@ defmodule FortymmWeb.ChallengeLive.Show do
          socket
          |> put_flash(:info, "Challenge status changed")
          |> push_navigate(to: ~p"/challenges/#{challenge.id}/waiting_room")}
+    end
+  end
+
+  defp redirect_based_on_participation(socket, challenge, current_user_id) do
+    match_id = challenge.match_id
+
+    cond do
+      is_nil(match_id) ->
+        # Error condition: challenge is accepted but no match_id
+        {:ok,
+         socket
+         |> put_flash(:error, "Something went wrong. Please try again.")
+         |> push_navigate(to: ~p"/dashboard")}
+
+      true ->
+        case Matches.get_match(match_id) do
+          {:ok, match} ->
+            is_participant =
+              Enum.any?(match.participants, fn p -> p.user_id == current_user_id end)
+
+            if is_participant do
+              {:ok,
+               socket
+               |> put_flash(:info, "Challenge accepted! Time to enter scores")
+               |> push_navigate(to: ~p"/matches/#{match_id}/games/1/scores/new")}
+            else
+              {:ok,
+               socket
+               |> put_flash(:info, "Challenge accepted! The match has begun")
+               |> push_navigate(to: ~p"/matches/#{match_id}")}
+            end
+
+          {:error, :not_found} ->
+            # Fallback to match page if match not found
+            {:ok,
+             socket
+             |> put_flash(:info, "Challenge accepted! The match has begun")
+             |> push_navigate(to: ~p"/matches/#{match_id}")}
+        end
     end
   end
 

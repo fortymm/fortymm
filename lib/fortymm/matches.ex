@@ -10,6 +10,7 @@ defmodule Fortymm.Matches do
     ChallengeStore,
     ChallengeUpdates,
     Creation,
+    MatchStore,
     Status
   }
 
@@ -269,6 +270,25 @@ defmodule Fortymm.Matches do
       {:error, :not_found} = error ->
         error
     end
+  end
+
+  @doc """
+  Gets a match by ID from ETS.
+
+  Returns `{:ok, match}` if found.
+  Returns `{:error, :not_found}` if not found.
+
+  ## Examples
+
+      iex> get_match("valid-id")
+      {:ok, %Match{}}
+
+      iex> get_match("invalid-id")
+      {:error, :not_found}
+
+  """
+  def get_match(id) do
+    MatchStore.get(id)
   end
 
   defp generate_id do

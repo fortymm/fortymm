@@ -2,11 +2,12 @@ defmodule Fortymm.MatchesTest do
   use Fortymm.DataCase
 
   alias Fortymm.Matches
-  alias Fortymm.Matches.{Challenge, ChallengeStore, ChallengeUpdates}
+  alias Fortymm.Matches.{Challenge, ChallengeStore, ChallengeUpdates, MatchStore}
 
   setup do
-    # Clear ETS table before each test
+    # Clear ETS tables before each test
     ChallengeStore.clear()
+    MatchStore.clear()
     :ok
   end
 
@@ -1213,6 +1214,127 @@ defmodule Fortymm.MatchesTest do
       assert cancelled.configuration.length_in_games == 5
       assert cancelled.configuration.rated == true
       assert cancelled.created_by_id == 42
+    end
+  end
+
+  describe "get_match/1" do
+    test "returns match when it exists" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      # Accept the challenge to create a match
+      {:ok, match} = Matches.accept_challenge(challenge.id, 2)
+
+      # Retrieve the match
+      assert {:ok, retrieved_match} = Matches.get_match(match.id)
+      assert retrieved_match.id == match.id
+      assert retrieved_match.status == "pending"
+      assert retrieved_match.match_configuration.length_in_games == 3
+      assert retrieved_match.match_configuration.rated == false
+      assert length(retrieved_match.participants) == 2
+    end
+
+    test "returns match with correct participant details" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 100
+        })
+
+      {:ok, match} = Matches.accept_challenge(challenge.id, 200)
+
+      assert {:ok, retrieved_match} = Matches.get_match(match.id)
+
+      # Check participants
+      participant_ids = Enum.map(retrieved_match.participants, & &1.user_id)
+      assert 100 in participant_ids
+      assert 200 in participant_ids
+      assert length(participant_ids) == 2
+    end
+
+    test "returns match with rated configuration" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 7, rated: true},
+          created_by_id: 42
+        })
+
+      {:ok, match} = Matches.accept_challenge(challenge.id, 43)
+
+      assert {:ok, retrieved_match} = Matches.get_match(match.id)
+      assert retrieved_match.match_configuration.rated == true
+      assert retrieved_match.match_configuration.length_in_games == 7
+    end
+
+    test "returns error when match does not exist" do
+      assert {:error, :not_found} = Matches.get_match("nonexistent-match-id")
+    end
+
+    test "returns error for invalid match ID" do
+      assert {:error, :not_found} = Matches.get_match("invalid-id-123")
+    end
+
+    test "can retrieve multiple different matches" do
+      {:ok, challenge1} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      {:ok, challenge2} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 5, rated: true},
+          created_by_id: 3
+        })
+
+      {:ok, match1} = Matches.accept_challenge(challenge1.id, 2)
+      {:ok, match2} = Matches.accept_challenge(challenge2.id, 4)
+
+      # Retrieve both matches
+      assert {:ok, retrieved_match1} = Matches.get_match(match1.id)
+      assert {:ok, retrieved_match2} = Matches.get_match(match2.id)
+
+      # Verify they are different matches
+      assert retrieved_match1.id != retrieved_match2.id
+      assert retrieved_match1.match_configuration.length_in_games == 3
+      assert retrieved_match2.match_configuration.length_in_games == 5
+      assert retrieved_match1.match_configuration.rated == false
+      assert retrieved_match2.match_configuration.rated == true
+    end
+
+    test "match ID is a valid hex string" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 3, rated: false},
+          created_by_id: 1
+        })
+
+      {:ok, match} = Matches.accept_challenge(challenge.id, 2)
+
+      assert {:ok, retrieved_match} = Matches.get_match(match.id)
+      assert is_binary(retrieved_match.id)
+      assert String.length(retrieved_match.id) == 32
+      assert String.match?(retrieved_match.id, ~r/^[0-9a-f]{32}$/)
+    end
+
+    test "match persists in ETS after creation" do
+      {:ok, challenge} =
+        Matches.create_challenge(%{
+          configuration: %{length_in_games: 1, rated: false},
+          created_by_id: 5
+        })
+
+      {:ok, match} = Matches.accept_challenge(challenge.id, 6)
+
+      # Wait a moment to ensure persistence
+      Process.sleep(10)
+
+      # Should still be retrievable
+      assert {:ok, retrieved_match} = Matches.get_match(match.id)
+      assert retrieved_match.id == match.id
     end
   end
 

@@ -45,7 +45,7 @@ defmodule Fortymm.Administration.UsersTest do
       %{users: [user1, user2, user3, user4], roles: [role1, role2]}
     end
 
-    test "returns all users by default", %{users: users} do
+    test "returns all users by default", %{users: _users} do
       result = Users.list_users()
 
       assert length(result.users) >= 4
@@ -126,14 +126,14 @@ defmodule Fortymm.Administration.UsersTest do
       assert result.total >= 4
     end
 
-    test "sorts users by id ascending", %{users: [user1, user2 | _]} do
+    test "sorts users by id ascending", %{users: [_user1, _user2 | _]} do
       result = Users.list_users(sort_by: :id, sort_order: :asc)
 
       user_ids = Enum.map(result.users, & &1.id)
       assert user_ids == Enum.sort(user_ids)
     end
 
-    test "sorts users by id descending", %{users: [user1, user2 | _]} do
+    test "sorts users by id descending", %{users: [_user1, _user2 | _]} do
       result = Users.list_users(sort_by: :id, sort_order: :desc)
 
       user_ids = Enum.map(result.users, & &1.id)
@@ -183,8 +183,8 @@ defmodule Fortymm.Administration.UsersTest do
       user2 =
         AccountsFixtures.user_fixture(%{email: "test2@example.com", username: "test2user"})
 
-      {:ok, user1} = Fortymm.Accounts.assign_role(user1, role.name)
-      {:ok, user2} = Fortymm.Accounts.assign_role(user2, role.name)
+      {:ok, _user1} = Fortymm.Accounts.assign_role(user1, role.name)
+      {:ok, _user2} = Fortymm.Accounts.assign_role(user2, role.name)
 
       result =
         Users.list_users(search: "test", role_id: role.id, sort_by: :email, sort_order: :asc)
@@ -327,9 +327,9 @@ defmodule Fortymm.Administration.UsersTest do
       # Clear existing roles first
       Fortymm.Repo.delete_all(Fortymm.Accounts.Role)
 
-      role_c = AccountsFixtures.role_fixture(%{name: "c_role"})
-      role_a = AccountsFixtures.role_fixture(%{name: "a_role"})
-      role_b = AccountsFixtures.role_fixture(%{name: "b_role"})
+      _role_c = AccountsFixtures.role_fixture(%{name: "c_role"})
+      _role_a = AccountsFixtures.role_fixture(%{name: "a_role"})
+      _role_b = AccountsFixtures.role_fixture(%{name: "b_role"})
 
       result = Users.list_roles()
 

@@ -50,7 +50,7 @@ defmodule FortymmWeb.Administration.UserControllerTest do
       assert html =~ user3.username
     end
 
-    test "displays user roles", %{conn: conn, users: [user1 | _], roles: [role1 | _]} do
+    test "displays user roles", %{conn: conn, users: [_user1 | _], roles: [role1 | _]} do
       admin = admin_user_fixture()
 
       conn =
@@ -62,7 +62,7 @@ defmodule FortymmWeb.Administration.UserControllerTest do
       assert html =~ role1.name
     end
 
-    test "displays gravatar avatars", %{conn: conn, users: [user1 | _]} do
+    test "displays gravatar avatars", %{conn: conn, users: [_user1 | _]} do
       admin = admin_user_fixture()
 
       conn =
@@ -536,7 +536,7 @@ defmodule FortymmWeb.Administration.UserControllerTest do
       assert html =~ formatted_date
     end
 
-    test "displays 'No Role' badge for users without roles", %{conn: conn, users: [_, _, user3]} do
+    test "displays 'No Role' badge for users without roles", %{conn: conn, users: [_, _, _user3]} do
       admin = admin_user_fixture()
 
       conn =
