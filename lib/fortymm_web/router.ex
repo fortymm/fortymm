@@ -70,6 +70,7 @@ defmodule FortymmWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     get "/users", UserController, :index
+    get "/roles", RoleController, :index
   end
 
   scope "/", FortymmWeb do

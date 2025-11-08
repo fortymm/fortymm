@@ -30,7 +30,7 @@ defmodule FortymmWeb.AdminControllerTest do
       assert html =~ "View and manage user accounts, roles, and permissions"
     end
 
-    test "displays roles and permissions card", %{conn: conn} do
+    test "displays roles and permissions cards", %{conn: conn} do
       admin = admin_user_fixture()
 
       conn =
@@ -39,9 +39,13 @@ defmodule FortymmWeb.AdminControllerTest do
         |> get(~p"/administration")
 
       html = html_response(conn, 200)
+      # Check for Roles card
       assert html =~ "Roles"
+      assert html =~ "Manage user roles and their associated permissions"
+      assert html =~ "Manage Roles"
+      # Check for Permissions card
       assert html =~ "Permissions"
-      assert html =~ "Configure roles and assign permissions to control access"
+      assert html =~ "Define and manage system permissions and capabilities"
     end
 
     test "displays system settings card", %{conn: conn} do
@@ -98,7 +102,7 @@ defmodule FortymmWeb.AdminControllerTest do
       assert html =~ "/administration/users"
     end
 
-    test "displays coming soon placeholders for other features", %{conn: conn} do
+    test "displays coming soon placeholders for permissions and system settings", %{conn: conn} do
       admin = admin_user_fixture()
 
       conn =
@@ -107,7 +111,7 @@ defmodule FortymmWeb.AdminControllerTest do
         |> get(~p"/administration")
 
       html = html_response(conn, 200)
-      # Roles & Permissions and System Settings still show Coming Soon
+      # Permissions and System Settings still show Coming Soon
       assert html =~ "Coming Soon"
       assert html =~ "Coming soon"
     end
@@ -212,6 +216,7 @@ defmodule FortymmWeb.AdminControllerTest do
       html = html_response(conn, 200)
       assert html =~ "hero-users"
       assert html =~ "hero-shield-check"
+      assert html =~ "hero-key"
       assert html =~ "hero-cog-6-tooth"
       assert html =~ "hero-chart-bar"
     end
