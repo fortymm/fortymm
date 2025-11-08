@@ -71,6 +71,7 @@ defmodule FortymmWeb.Router do
 
     get "/users", UserController, :index
     get "/roles", RoleController, :index
+    get "/permissions", PermissionController, :index
   end
 
   scope "/", FortymmWeb do

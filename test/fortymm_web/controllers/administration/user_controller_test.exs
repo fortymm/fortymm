@@ -182,6 +182,45 @@ defmodule FortymmWeb.Administration.UserControllerTest do
       assert html =~ "Clear"
     end
 
+    test "displays clear filter button when role filter is active", %{
+      conn: conn,
+      roles: [role1 | _]
+    } do
+      admin = admin_user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(admin)
+        |> get(~p"/administration/users?role_id=#{role1.id}")
+
+      html = html_response(conn, 200)
+      assert html =~ "Clear"
+    end
+
+    test "does not display clear filter button when search is empty", %{conn: conn} do
+      admin = admin_user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(admin)
+        |> get(~p"/administration/users?search=")
+
+      html = html_response(conn, 200)
+      refute html =~ "Clear"
+    end
+
+    test "does not display clear filter button when role_id is empty", %{conn: conn} do
+      admin = admin_user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(admin)
+        |> get(~p"/administration/users?role_id=")
+
+      html = html_response(conn, 200)
+      refute html =~ "Clear"
+    end
+
     test "combines search and role filter", %{conn: conn, users: [user1 | _], roles: [role1 | _]} do
       admin = admin_user_fixture()
 

@@ -1,8 +1,8 @@
 <div class="container mx-auto px-4 py-8 max-w-7xl">
   <div class="mb-8">
-    <h1 class="text-3xl font-bold">Role Management</h1>
+    <h1 class="text-3xl font-bold">Permission Management</h1>
     <p class="text-base-content/70 mt-2">
-      Manage and view all roles in the system
+      Manage and view all permissions in the system
     </p>
   </div>
 
@@ -11,10 +11,10 @@
     <div class="card-body">
       <form
         method="get"
-        action={~p"/administration/roles"}
-        class="flex items-end gap-4"
+        action={~p"/administration/permissions"}
+        class="grid grid-cols-1 gap-4 md:grid-cols-2"
       >
-        <div class="form-control flex-1">
+        <div class="form-control">
           <label class="label" for="search">
             <span class="label-text">Search</span>
           </label>
@@ -23,18 +23,18 @@
             name="search"
             id="search"
             value={@search}
-            placeholder="Role name or description..."
+            placeholder="Name, slug, or description..."
             class="input input-bordered"
           />
         </div>
 
-        <div class="form-control">
+        <div class="form-control md:self-end">
           <div class="flex gap-2">
             <button type="submit" class="btn btn-primary">
               <.icon name="hero-magnifying-glass" class="w-4 h-4" /> Filter
             </button>
             <%= if @search && @search != "" do %>
-              <a href={~p"/administration/roles"} class="btn btn-ghost">
+              <a href={~p"/administration/permissions"} class="btn btn-ghost">
                 <.icon name="hero-x-mark" class="w-4 h-4" /> Clear
               </a>
             <% end %>
@@ -44,7 +44,7 @@
     </div>
   </div>
 
-  <%!-- Roles Table --%>
+  <%!-- Permissions Table --%>
   <div class="card bg-base-100">
     <div class="overflow-x-auto">
       <table class="table table-zebra">
@@ -73,15 +73,15 @@
             <th>
               <.sort_link
                 conn={@conn}
-                field={:description}
-                label="Description"
+                field={:slug}
+                label="Slug"
                 current_sort_by={@sort_by}
                 current_sort_order={@sort_order}
                 search={@search}
               />
             </th>
-            <th>Permissions</th>
-            <th>Users</th>
+            <th>Description</th>
+            <th>Roles</th>
             <th>
               <.sort_link
                 conn={@conn}
@@ -95,56 +95,47 @@
           </tr>
         </thead>
         <tbody>
-          <%= if @roles == [] do %>
+          <%= if @permissions == [] do %>
             <tr>
               <td colspan="6" class="text-center py-12">
-                <.icon name="hero-shield-check" class="w-12 h-12 mx-auto mb-3 opacity-40" />
-                <p class="text-lg font-medium">No roles found</p>
+                <.icon name="hero-key" class="w-12 h-12 mx-auto mb-3 opacity-40" />
+                <p class="text-lg font-medium">No permissions found</p>
                 <%= if @search do %>
                   <p class="mt-1 text-sm opacity-70">Try adjusting your search</p>
                 <% end %>
               </td>
             </tr>
           <% else %>
-            <%= for role <- @roles do %>
+            <%= for permission <- @permissions do %>
               <tr>
-                <td class="font-mono">{role.id}</td>
+                <td class="font-mono">{permission.id}</td>
                 <td>
-                  <div class="flex items-center gap-2">
-                    <.icon name="hero-shield-check" class="w-5 h-5 text-primary" />
-                    <span class="font-medium">{role.name}</span>
-                  </div>
+                  <div class="font-medium">{permission.name}</div>
                 </td>
                 <td>
-                  <%= if role.description do %>
-                    <span class="opacity-70">{role.description}</span>
+                  <code class="px-2 py-1 bg-base-200 rounded text-sm">{permission.slug}</code>
+                </td>
+                <td>
+                  <%= if permission.description do %>
+                    <span class="text-sm opacity-80">{permission.description}</span>
                   <% else %>
-                    <span class="italic opacity-40">No description</span>
+                    <span class="text-sm opacity-40 italic">No description</span>
                   <% end %>
                 </td>
                 <td>
-                  <%= if role.permissions && role.permissions != [] do %>
+                  <%= if permission.roles != [] do %>
                     <div class="flex flex-wrap gap-1">
-                      <%= for permission <- Enum.take(role.permissions, 3) do %>
-                        <span class="badge badge-sm badge-outline">{permission.name}</span>
-                      <% end %>
-                      <%= if length(role.permissions) > 3 do %>
-                        <span class="badge badge-sm badge-ghost">
-                          +{length(role.permissions) - 3} more
-                        </span>
+                      <%= for role <- permission.roles do %>
+                        <span class="badge badge-sm badge-info">{role.name}</span>
                       <% end %>
                     </div>
                   <% else %>
-                    <span class="italic opacity-40">No permissions</span>
+                    <span class="badge badge-sm badge-ghost">No roles</span>
                   <% end %>
                 </td>
-                <td>
-                  <div class="flex items-center gap-2">
-                    <.icon name="hero-user-group" class="w-4 h-4 opacity-50" />
-                    <span class="font-semibold">{Map.get(role, :user_count, 0)}</span>
-                  </div>
+                <td class="opacity-70">
+                  {Calendar.strftime(permission.inserted_at, "%b %d, %Y")}
                 </td>
-                <td class="opacity-70">{Calendar.strftime(role.inserted_at, "%b %d, %Y")}</td>
               </tr>
             <% end %>
           <% end %>
