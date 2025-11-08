@@ -16,6 +16,8 @@ defmodule Fortymm.Application do
       FortymmWeb.Presence,
       # Start the ETS-backed challenge store
       Fortymm.Matches.ChallengeStore,
+      # Start the ETS-backed match store
+      Fortymm.Matches.MatchStore,
       # Start a worker by calling: Fortymm.Worker.start_link(arg)
       # {Fortymm.Worker, arg},
       # Start to serve requests, typically the last entry
