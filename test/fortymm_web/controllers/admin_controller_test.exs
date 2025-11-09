@@ -177,6 +177,19 @@ defmodule FortymmWeb.AdminControllerTest do
   end
 
   describe "Layout and UI" do
+    test "displays breadcrumb navigation", %{conn: conn} do
+      admin = admin_user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(admin)
+        |> get(~p"/administration")
+
+      html = html_response(conn, 200)
+      assert html =~ "Breadcrumb"
+      assert html =~ "Administration"
+    end
+
     test "uses app layout", %{conn: conn} do
       admin = admin_user_fixture()
 
