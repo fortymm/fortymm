@@ -11,7 +11,7 @@ defmodule Fortymm.Matches.ScoreProposal do
   import Ecto.Changeset
 
   embedded_schema do
-    field :proposed_by_participant_id, :integer
+    field :proposed_by_participant_id, :string
 
     embeds_many :scores, Fortymm.Matches.Score
   end

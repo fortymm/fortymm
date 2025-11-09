@@ -3,6 +3,10 @@ defmodule Fortymm.Matches.GameTest do
 
   alias Fortymm.Matches.Game
 
+  @participant_id_1 "550e8400-e29b-41d4-a716-446655440001"
+  @participant_id_2 "550e8400-e29b-41d4-a716-446655440002"
+  @proposer_id "550e8400-e29b-41d4-a716-446655440003"
+
   describe "changeset/2" do
     test "returns a valid changeset with correct data" do
       changeset =
@@ -138,10 +142,10 @@ defmodule Fortymm.Matches.GameTest do
           game_number: 1,
           score_proposals: [
             %{
-              proposed_by_participant_id: 1,
+              proposed_by_participant_id: @proposer_id,
               scores: [
-                %{match_participant_id: 1, score: 11},
-                %{match_participant_id: 2, score: 9}
+                %{match_participant_id: @participant_id_1, score: 11},
+                %{match_participant_id: @participant_id_2, score: 9}
               ]
             }
           ]
@@ -158,17 +162,17 @@ defmodule Fortymm.Matches.GameTest do
           game_number: 1,
           score_proposals: [
             %{
-              proposed_by_participant_id: 1,
+              proposed_by_participant_id: @proposer_id,
               scores: [
-                %{match_participant_id: 1, score: 11},
-                %{match_participant_id: 2, score: 8}
+                %{match_participant_id: @participant_id_1, score: 11},
+                %{match_participant_id: @participant_id_2, score: 8}
               ]
             },
             %{
-              proposed_by_participant_id: 2,
+              proposed_by_participant_id: @proposer_id,
               scores: [
-                %{match_participant_id: 1, score: 9},
-                %{match_participant_id: 2, score: 11}
+                %{match_participant_id: @participant_id_1, score: 9},
+                %{match_participant_id: @participant_id_2, score: 11}
               ]
             }
           ]
@@ -195,10 +199,10 @@ defmodule Fortymm.Matches.GameTest do
           game_number: 1,
           score_proposals: [
             %{
-              proposed_by_participant_id: 1,
+              proposed_by_participant_id: @proposer_id,
               scores: [
-                %{match_participant_id: 1, score: -5},
-                %{match_participant_id: 2, score: 21}
+                %{match_participant_id: @participant_id_1, score: -5},
+                %{match_participant_id: @participant_id_2, score: 21}
               ]
             }
           ]
@@ -218,9 +222,9 @@ defmodule Fortymm.Matches.GameTest do
           game_number: 1,
           score_proposals: [
             %{
-              proposed_by_participant_id: 1,
+              proposed_by_participant_id: @proposer_id,
               scores: [
-                %{match_participant_id: 1, score: 21}
+                %{match_participant_id: @participant_id_1, score: 21}
               ]
             }
           ]
@@ -237,11 +241,11 @@ defmodule Fortymm.Matches.GameTest do
           game_number: 1,
           score_proposals: [
             %{
-              proposed_by_participant_id: 1,
+              proposed_by_participant_id: @proposer_id,
               scores: [
-                %{match_participant_id: 1, score: 21},
-                %{match_participant_id: 2, score: 19},
-                %{match_participant_id: 1, score: 15}
+                %{match_participant_id: @participant_id_1, score: 21},
+                %{match_participant_id: @participant_id_2, score: 19},
+                %{match_participant_id: @participant_id_1, score: 15}
               ]
             }
           ]
@@ -259,8 +263,8 @@ defmodule Fortymm.Matches.GameTest do
           score_proposals: [
             %{
               scores: [
-                %{match_participant_id: 1, score: 21},
-                %{match_participant_id: 2, score: 19}
+                %{match_participant_id: @participant_id_1, score: 21},
+                %{match_participant_id: @participant_id_2, score: 19}
               ]
             }
           ]

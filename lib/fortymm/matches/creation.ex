@@ -78,7 +78,16 @@ defmodule Fortymm.Matches.Creation do
           %{game | id: generate_id()}
         end)
 
-      match_with_game_ids = %{match_with_id | games: games_with_ids}
+      participants_with_ids =
+        Enum.map(match_with_id.participants, fn participant ->
+          %{participant | id: generate_id()}
+        end)
+
+      match_with_game_ids = %{
+        match_with_id
+        | games: games_with_ids,
+          participants: participants_with_ids
+      }
 
       MatchStore.insert(match_with_game_ids.id, match_with_game_ids)
       {:ok, match_with_game_ids}

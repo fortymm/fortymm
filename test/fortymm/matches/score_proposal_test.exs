@@ -3,19 +3,23 @@ defmodule Fortymm.Matches.ScoreProposalTest do
 
   alias Fortymm.Matches.ScoreProposal
 
+  @participant_id_1 "550e8400-e29b-41d4-a716-446655440001"
+  @participant_id_2 "550e8400-e29b-41d4-a716-446655440002"
+  @proposer_id "550e8400-e29b-41d4-a716-446655440003"
+
   describe "changeset/2" do
     test "returns a valid changeset with correct data" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 11},
-            %{match_participant_id: 2, score: 9}
+            %{match_participant_id: @participant_id_1, score: 11},
+            %{match_participant_id: @participant_id_2, score: 9}
           ]
         })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :proposed_by_participant_id) == 1
+      assert Ecto.Changeset.get_field(changeset, :proposed_by_participant_id) == @proposer_id
       scores = Ecto.Changeset.get_field(changeset, :scores)
       assert length(scores) == 2
     end
@@ -23,9 +27,9 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects single score" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 21}
+            %{match_participant_id: @participant_id_1, score: 21}
           ]
         })
 
@@ -36,10 +40,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "accepts exactly 2 scores" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 2,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 21},
-            %{match_participant_id: 2, score: 19}
+            %{match_participant_id: @participant_id_1, score: 21},
+            %{match_participant_id: @participant_id_2, score: 19}
           ]
         })
 
@@ -48,25 +52,25 @@ defmodule Fortymm.Matches.ScoreProposalTest do
       assert length(scores) == 2
     end
 
-    test "accepts proposed_by_participant_id 2" do
+    test "accepts proposed_by_participant_id as UUID string" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 2,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 21},
-            %{match_participant_id: 2, score: 19}
+            %{match_participant_id: @participant_id_1, score: 21},
+            %{match_participant_id: @participant_id_2, score: 19}
           ]
         })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :proposed_by_participant_id) == 2
+      assert Ecto.Changeset.get_field(changeset, :proposed_by_participant_id) == @proposer_id
     end
 
     test "requires proposed_by_participant_id" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
           scores: [
-            %{match_participant_id: 1, score: 21}
+            %{match_participant_id: @participant_id_1, score: 21}
           ]
         })
 
@@ -77,7 +81,7 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "requires scores" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1
+          proposed_by_participant_id: @proposer_id
         })
 
       refute changeset.valid?
@@ -87,7 +91,7 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects empty scores array" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: []
         })
 
@@ -98,11 +102,11 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects more than 2 scores" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 21},
-            %{match_participant_id: 2, score: 19},
-            %{match_participant_id: 1, score: 15}
+            %{match_participant_id: @participant_id_1, score: 21},
+            %{match_participant_id: @participant_id_2, score: 19},
+            %{match_participant_id: @participant_id_1, score: 15}
           ]
         })
 
@@ -113,10 +117,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "validates nested score changesets with invalid score" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: -5},
-            %{match_participant_id: 2, score: 21}
+            %{match_participant_id: @participant_id_1, score: -5},
+            %{match_participant_id: @participant_id_2, score: 21}
           ]
         })
 
@@ -129,9 +133,9 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "validates all nested score changesets" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1},
+            %{match_participant_id: @participant_id_1},
             %{score: 21}
           ]
         })
@@ -149,7 +153,7 @@ defmodule Fortymm.Matches.ScoreProposalTest do
         ScoreProposal.changeset(%ScoreProposal{}, %{
           proposed_by_participant_id: nil,
           scores: [
-            %{match_participant_id: 1, score: 21}
+            %{match_participant_id: @participant_id_1, score: 21}
           ]
         })
 
@@ -160,7 +164,7 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "treats nil scores as blank" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: nil
         })
 
@@ -168,39 +172,43 @@ defmodule Fortymm.Matches.ScoreProposalTest do
       assert "is invalid" in errors_on(changeset).scores
     end
 
-    test "accepts proposed_by_participant_id as string integer" do
+    test "accepts proposed_by_participant_id as string UUID" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: "1",
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 21},
-            %{match_participant_id: 2, score: 19}
+            %{match_participant_id: @participant_id_1, score: 21},
+            %{match_participant_id: @participant_id_2, score: 19}
           ]
         })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :proposed_by_participant_id) == 1
+      assert Ecto.Changeset.get_field(changeset, :proposed_by_participant_id) == @proposer_id
     end
 
-    test "rejects non-integer proposed_by_participant_id" do
+    test "accepts any string as proposed_by_participant_id" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: "invalid",
+          proposed_by_participant_id: "any-string-value",
           scores: [
-            %{match_participant_id: 1, score: 21}
+            %{match_participant_id: @participant_id_1, score: 21},
+            %{match_participant_id: @participant_id_2, score: 19}
           ]
         })
 
-      refute changeset.valid?
-      assert "is invalid" in errors_on(changeset).proposed_by_participant_id
+      assert changeset.valid?
+
+      assert Ecto.Changeset.get_field(changeset, :proposed_by_participant_id) ==
+               "any-string-value"
     end
 
-    test "rejects float proposed_by_participant_id" do
+    test "rejects integer proposed_by_participant_id" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1.5,
+          proposed_by_participant_id: 123,
           scores: [
-            %{match_participant_id: 1, score: 21}
+            %{match_participant_id: @participant_id_1, score: 21},
+            %{match_participant_id: @participant_id_2, score: 19}
           ]
         })
 
@@ -211,10 +219,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "does not cast unknown fields" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 21},
-            %{match_participant_id: 2, score: 19}
+            %{match_participant_id: @participant_id_1, score: 21},
+            %{match_participant_id: @participant_id_2, score: 19}
           ],
           unknown_field: "value"
         })
@@ -226,10 +234,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "accepts score with zero value for loser" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 11},
-            %{match_participant_id: 2, score: 0}
+            %{match_participant_id: @participant_id_1, score: 11},
+            %{match_participant_id: @participant_id_2, score: 0}
           ]
         })
 
@@ -239,10 +247,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "propagates nested score validation errors" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 21},
-            %{match_participant_id: "invalid", score: "not a number"}
+            %{match_participant_id: @participant_id_1, score: 21},
+            %{match_participant_id: 12_345, score: "not a number"}
           ]
         })
 
@@ -258,10 +266,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "accepts valid 11-0 score" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 11},
-            %{match_participant_id: 2, score: 0}
+            %{match_participant_id: @participant_id_1, score: 11},
+            %{match_participant_id: @participant_id_2, score: 0}
           ]
         })
 
@@ -271,10 +279,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "accepts valid 11-9 score" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 11},
-            %{match_participant_id: 2, score: 9}
+            %{match_participant_id: @participant_id_1, score: 11},
+            %{match_participant_id: @participant_id_2, score: 9}
           ]
         })
 
@@ -284,10 +292,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "accepts valid 12-10 score (deuce scenario)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 12},
-            %{match_participant_id: 2, score: 10}
+            %{match_participant_id: @participant_id_1, score: 12},
+            %{match_participant_id: @participant_id_2, score: 10}
           ]
         })
 
@@ -297,10 +305,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "accepts valid 15-13 score (extended deuce)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 15},
-            %{match_participant_id: 2, score: 13}
+            %{match_participant_id: @participant_id_1, score: 15},
+            %{match_participant_id: @participant_id_2, score: 13}
           ]
         })
 
@@ -310,10 +318,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "accepts valid 13-15 score (second player wins)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 2,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 13},
-            %{match_participant_id: 2, score: 15}
+            %{match_participant_id: @participant_id_1, score: 13},
+            %{match_participant_id: @participant_id_2, score: 15}
           ]
         })
 
@@ -323,10 +331,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects 10-8 score (neither player has 11)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 10},
-            %{match_participant_id: 2, score: 8}
+            %{match_participant_id: @participant_id_1, score: 10},
+            %{match_participant_id: @participant_id_2, score: 8}
           ]
         })
 
@@ -337,10 +345,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects 11-10 score (game must continue to 2-point lead)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 11},
-            %{match_participant_id: 2, score: 10}
+            %{match_participant_id: @participant_id_1, score: 11},
+            %{match_participant_id: @participant_id_2, score: 10}
           ]
         })
 
@@ -354,10 +362,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects 10-11 score (game must continue to 2-point lead)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 2,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 10},
-            %{match_participant_id: 2, score: 11}
+            %{match_participant_id: @participant_id_1, score: 10},
+            %{match_participant_id: @participant_id_2, score: 11}
           ]
         })
 
@@ -371,10 +379,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects 12-11 score (need exactly 2-point lead)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 12},
-            %{match_participant_id: 2, score: 11}
+            %{match_participant_id: @participant_id_1, score: 12},
+            %{match_participant_id: @participant_id_2, score: 11}
           ]
         })
 
@@ -385,10 +393,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects 15-12 score (need exactly 2-point lead)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 1,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 15},
-            %{match_participant_id: 2, score: 12}
+            %{match_participant_id: @participant_id_1, score: 15},
+            %{match_participant_id: @participant_id_2, score: 12}
           ]
         })
 
@@ -399,10 +407,10 @@ defmodule Fortymm.Matches.ScoreProposalTest do
     test "rejects 14-15 score (need exactly 2-point lead)" do
       changeset =
         ScoreProposal.changeset(%ScoreProposal{}, %{
-          proposed_by_participant_id: 2,
+          proposed_by_participant_id: @proposer_id,
           scores: [
-            %{match_participant_id: 1, score: 14},
-            %{match_participant_id: 2, score: 15}
+            %{match_participant_id: @participant_id_1, score: 14},
+            %{match_participant_id: @participant_id_2, score: 15}
           ]
         })
 

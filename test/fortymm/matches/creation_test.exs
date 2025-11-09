@@ -54,6 +54,35 @@ defmodule Fortymm.Matches.CreationTest do
       assert participant_2.user_id == 99
     end
 
+    test "assigns unique UUID ids to participants" do
+      challenge = %Challenge{
+        id: "test-challenge-id",
+        created_by_id: 1,
+        status: "pending",
+        configuration: %Configuration{
+          id: nil,
+          length_in_games: 3,
+          rated: false
+        }
+      }
+
+      assert {:ok, match} = Creation.from_challenge(challenge, 2)
+
+      participant_1 = Enum.find(match.participants, &(&1.participant_number == 1))
+      participant_2 = Enum.find(match.participants, &(&1.participant_number == 2))
+
+      # Both should have IDs
+      assert participant_1.id
+      assert participant_2.id
+
+      # IDs should be different
+      assert participant_1.id != participant_2.id
+
+      # IDs should be strings (UUIDs)
+      assert is_binary(participant_1.id)
+      assert is_binary(participant_2.id)
+    end
+
     test "assigns participant numbers correctly" do
       challenge = %Challenge{
         id: "test-challenge-id",

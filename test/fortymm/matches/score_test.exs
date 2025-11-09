@@ -3,23 +3,26 @@ defmodule Fortymm.Matches.ScoreTest do
 
   alias Fortymm.Matches.Score
 
+  @participant_id_1 "550e8400-e29b-41d4-a716-446655440001"
+  @participant_id_2 "550e8400-e29b-41d4-a716-446655440002"
+
   describe "changeset/2" do
     test "returns a valid changeset with correct data" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: 21
         })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :match_participant_id) == 1
+      assert Ecto.Changeset.get_field(changeset, :match_participant_id) == @participant_id_1
       assert Ecto.Changeset.get_field(changeset, :score) == 21
     end
 
     test "accepts score of 0" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: 0
         })
 
@@ -30,7 +33,7 @@ defmodule Fortymm.Matches.ScoreTest do
     test "accepts large score values" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: 999
         })
 
@@ -41,12 +44,12 @@ defmodule Fortymm.Matches.ScoreTest do
     test "accepts match_participant_id 2" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 2,
+          match_participant_id: @participant_id_2,
           score: 15
         })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :match_participant_id) == 2
+      assert Ecto.Changeset.get_field(changeset, :match_participant_id) == @participant_id_2
     end
 
     test "requires match_participant_id" do
@@ -57,7 +60,7 @@ defmodule Fortymm.Matches.ScoreTest do
     end
 
     test "requires score" do
-      changeset = Score.changeset(%Score{}, %{match_participant_id: 1})
+      changeset = Score.changeset(%Score{}, %{match_participant_id: @participant_id_1})
 
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).score
@@ -74,7 +77,7 @@ defmodule Fortymm.Matches.ScoreTest do
     test "rejects negative score" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: -1
         })
 
@@ -85,7 +88,7 @@ defmodule Fortymm.Matches.ScoreTest do
     test "rejects large negative score" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: -100
         })
 
@@ -107,7 +110,7 @@ defmodule Fortymm.Matches.ScoreTest do
     test "treats nil score as blank" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: nil
         })
 
@@ -118,7 +121,7 @@ defmodule Fortymm.Matches.ScoreTest do
     test "accepts score as string integer" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: "15"
         })
 
@@ -126,21 +129,21 @@ defmodule Fortymm.Matches.ScoreTest do
       assert Ecto.Changeset.get_field(changeset, :score) == 15
     end
 
-    test "accepts match_participant_id as string integer" do
+    test "accepts match_participant_id as UUID string" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: "2",
+          match_participant_id: @participant_id_2,
           score: 21
         })
 
       assert changeset.valid?
-      assert Ecto.Changeset.get_field(changeset, :match_participant_id) == 2
+      assert Ecto.Changeset.get_field(changeset, :match_participant_id) == @participant_id_2
     end
 
     test "rejects non-integer score" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: "not a number"
         })
 
@@ -148,10 +151,10 @@ defmodule Fortymm.Matches.ScoreTest do
       assert "is invalid" in errors_on(changeset).score
     end
 
-    test "rejects non-integer match_participant_id" do
+    test "rejects integer match_participant_id" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: "invalid",
+          match_participant_id: 12_345,
           score: 21
         })
 
@@ -162,7 +165,7 @@ defmodule Fortymm.Matches.ScoreTest do
     test "rejects float score" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: 21.5
         })
 
@@ -184,7 +187,7 @@ defmodule Fortymm.Matches.ScoreTest do
     test "does not cast unknown fields" do
       changeset =
         Score.changeset(%Score{}, %{
-          match_participant_id: 1,
+          match_participant_id: @participant_id_1,
           score: 21,
           unknown_field: "value"
         })

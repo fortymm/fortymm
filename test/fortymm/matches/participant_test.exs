@@ -16,6 +16,39 @@ defmodule Fortymm.Matches.ParticipantTest do
       assert Ecto.Changeset.get_field(changeset, :participant_number) == 1
     end
 
+    test "autogenerates a UUID id" do
+      changeset =
+        Participant.changeset(%Participant{}, %{
+          user_id: 1,
+          participant_number: 1
+        })
+
+      assert changeset.valid?
+      id = Ecto.Changeset.get_field(changeset, :id)
+      assert is_binary(id)
+      # UUID strings are 36 characters (16 bytes + 4 hyphens + 4 hyphens, 32 hex + 4 dashes)
+      assert byte_size(id) >= 16
+    end
+
+    test "each participant gets a unique UUID" do
+      changeset1 =
+        Participant.changeset(%Participant{}, %{
+          user_id: 1,
+          participant_number: 1
+        })
+
+      changeset2 =
+        Participant.changeset(%Participant{}, %{
+          user_id: 2,
+          participant_number: 2
+        })
+
+      id1 = Ecto.Changeset.get_field(changeset1, :id)
+      id2 = Ecto.Changeset.get_field(changeset2, :id)
+
+      assert id1 != id2
+    end
+
     test "accepts participant_number 1" do
       changeset =
         Participant.changeset(%Participant{}, %{

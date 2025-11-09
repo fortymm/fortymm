@@ -29,8 +29,16 @@ defmodule Fortymm.Matches.Participant do
   """
   def changeset(participant, attrs) do
     participant
-    |> cast(attrs, [:user_id, :participant_number])
+    |> cast(attrs, [:id, :user_id, :participant_number])
     |> validate_required([:user_id, :participant_number])
     |> validate_inclusion(:participant_number, [1, 2], message: "must be 1 or 2")
+    |> ensure_id()
+  end
+
+  defp ensure_id(changeset) do
+    case get_field(changeset, :id) do
+      nil -> put_change(changeset, :id, Ecto.UUID.generate())
+      _ -> changeset
+    end
   end
 end
