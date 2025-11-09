@@ -3,7 +3,7 @@ defmodule Fortymm.Matches.Score do
   Embedded schema for a score within a score proposal.
 
   This schema represents a score for a specific participant in a game, including:
-  - `match_participant_id`: Reference to the participant's embedded ID
+  - `match_participant_id`: Reference to the participant's UUID
   - `score`: The numeric score value for this participant
   """
 
@@ -11,7 +11,7 @@ defmodule Fortymm.Matches.Score do
   import Ecto.Changeset
 
   embedded_schema do
-    field :match_participant_id, :integer
+    field :match_participant_id, :string
     field :score, :integer
   end
 
@@ -20,7 +20,7 @@ defmodule Fortymm.Matches.Score do
 
   ## Examples
 
-      iex> changeset(%Score{}, %{match_participant_id: 1, score: 21})
+      iex> changeset(%Score{}, %{match_participant_id: "550e8400-e29b-41d4-a716-446655440000", score: 21})
       %Ecto.Changeset{valid?: true}
 
       iex> changeset(%Score{}, %{})
