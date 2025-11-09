@@ -1,0 +1,161 @@
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-3xl font-bold mb-2">Theme preferences</h1>
+  <p class="text-base-content/70 mb-6">
+    Choose how FortyMM looks to you. Select a single theme, or sync with your system and automatically switch between day and night themes. Selections are applied immediately and saved automatically.
+  </p>
+
+  <div class="card bg-base-200 shadow-xl">
+    <div class="card-body">
+      <h2 class="font-semibold mb-4">Theme mode</h2>
+
+      <div id="appearance-form">
+        <select class="select select-bordered w-full">
+          <option value="system">Sync With System</option>
+          <option value="light">Single Theme</option>
+        </select>
+      </div>
+
+      <%!-- Single theme panel - shown when "Single Theme" is selected --%>
+      <div id="single-theme-panel" class="hidden mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <%!-- Light default --%>
+          <div class="form-control">
+            <label class="card border-2 border-base-300 bg-base-100 cursor-pointer hover:shadow-lg transition-shadow has-[:checked]:border-primary">
+              <div class="card-body p-4">
+                <div
+                  data-theme="light"
+                  class="bg-base-100 rounded-lg p-4 border border-base-300 mb-3"
+                >
+                  <div class="flex gap-2 mb-3">
+                    <div class="w-12 h-1.5 bg-base-300 rounded"></div>
+                    <div class="w-16 h-1.5 bg-base-300 rounded"></div>
+                    <div class="w-12 h-1.5 bg-base-300 rounded"></div>
+                  </div>
+                  <div class="w-20 h-1.5 bg-base-content/40 rounded mb-3"></div>
+                  <div class="bg-success/20 p-2.5 rounded mb-2">
+                    <div class="w-28 h-1.5 bg-success rounded"></div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="theme-choice"
+                    value="light"
+                    class="radio radio-primary"
+                  />
+                  <span class="label-text font-medium">Light default</span>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <%!-- Dark default --%>
+          <div class="form-control">
+            <label class="card border-2 border-base-300 bg-base-100 cursor-pointer hover:shadow-lg transition-shadow has-[:checked]:border-primary">
+              <div class="card-body p-4">
+                <div
+                  data-theme="dark"
+                  class="bg-base-100 rounded-lg p-4 border border-base-300 mb-3"
+                >
+                  <div class="flex gap-2 mb-3">
+                    <div class="w-12 h-1.5 bg-base-300 rounded"></div>
+                    <div class="w-16 h-1.5 bg-base-300 rounded"></div>
+                    <div class="w-12 h-1.5 bg-base-300 rounded"></div>
+                  </div>
+                  <div class="w-20 h-1.5 bg-base-content/40 rounded mb-3"></div>
+                  <div class="bg-success/20 p-2.5 rounded mb-2">
+                    <div class="w-28 h-1.5 bg-success rounded"></div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="theme-choice"
+                    value="dark"
+                    class="radio radio-primary"
+                  />
+                  <span class="label-text font-medium">Dark default</span>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <%!-- Theme panels - shown when "Sync With System" is selected --%>
+      <div id="theme-panels" class="hidden mt-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <%!-- Light theme card --%>
+          <div id="light-theme-card" class="card border-2 border-base-300 bg-base-100">
+            <div class="card-body">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-semibold flex items-center gap-2">
+                  <.icon name="hero-sun" class="size-5" /> Light theme
+                </h3>
+                <span id="light-theme-badge" class="badge badge-primary badge-sm hidden">
+                  Active
+                </span>
+              </div>
+              <p class="text-sm text-base-content/70 mb-4">
+                This theme will be active when your system is set to "light mode"
+              </p>
+
+              <%!-- Light theme preview --%>
+              <div
+                data-theme="light"
+                class="bg-base-100 rounded-lg p-4 border border-base-300 mb-4"
+              >
+                <div class="flex gap-2 mb-3">
+                  <div class="w-16 h-2 bg-base-300 rounded"></div>
+                  <div class="w-20 h-2 bg-base-300 rounded"></div>
+                  <div class="w-16 h-2 bg-base-300 rounded"></div>
+                </div>
+                <div class="w-24 h-2 bg-base-content/40 rounded mb-3"></div>
+                <div class="bg-success/20 p-3 rounded mb-2">
+                  <div class="w-32 h-2 bg-success rounded"></div>
+                </div>
+              </div>
+
+              <div class="text-sm font-medium mb-2">Light default</div>
+            </div>
+          </div>
+
+          <%!-- Dark theme card --%>
+          <div id="dark-theme-card" class="card border-2 border-base-300 bg-base-100">
+            <div class="card-body">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-semibold flex items-center gap-2">
+                  <.icon name="hero-moon" class="size-5" /> Dark theme
+                </h3>
+                <span id="dark-theme-badge" class="badge badge-primary badge-sm hidden">
+                  Active
+                </span>
+              </div>
+              <p class="text-sm text-base-content/70 mb-4">
+                This theme will be active when your system is set to "dark mode"
+              </p>
+
+              <%!-- Dark theme preview --%>
+              <div
+                data-theme="dark"
+                class="bg-base-100 rounded-lg p-4 border border-base-300 mb-4"
+              >
+                <div class="flex gap-2 mb-3">
+                  <div class="w-16 h-2 bg-base-300 rounded"></div>
+                  <div class="w-20 h-2 bg-base-300 rounded"></div>
+                  <div class="w-16 h-2 bg-base-300 rounded"></div>
+                </div>
+                <div class="w-24 h-2 bg-base-content/40 rounded mb-3"></div>
+                <div class="bg-success/20 p-3 rounded mb-2">
+                  <div class="w-32 h-2 bg-success rounded"></div>
+                </div>
+              </div>
+
+              <div class="text-sm font-medium mb-2">Dark default</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -26,7 +26,11 @@
         }
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
         
-        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+        window.addEventListener("phx:set-theme", (e) => {
+          // Support both detail.theme (from CustomEvent) and target.dataset.phxTheme (from buttons)
+          const theme = e.detail?.theme || e.target.dataset.phxTheme;
+          if (theme) setTheme(theme);
+        });
       })();
     </script>
   </head>
@@ -82,6 +86,14 @@
                     class={[assigns[:active_nav] == :settings && "menu-active"]}
                   >
                     <.icon name="hero-user-circle" class="size-5" /> Account Settings
+                  </.link>
+                </li>
+                <li>
+                  <.link
+                    href={~p"/settings/appearance"}
+                    class={[assigns[:active_nav] == :appearance && "menu-active"]}
+                  >
+                    <.icon name="hero-paint-brush" class="size-5" /> Appearance
                   </.link>
                 </li>
                 <li>

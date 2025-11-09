@@ -84,6 +84,11 @@ liveSocket.connect()
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
+// Page-specific JavaScript modules
+if (document.querySelector('#appearance-form')) {
+  import('./pages/appearance').then(module => module.init())
+}
+
 // The lines below enable quality of life phoenix_live_reload
 // development features:
 //
