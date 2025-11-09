@@ -1,88 +1,42 @@
 defmodule FortymmWeb.Administration.UserController do
   use FortymmWeb, :controller
 
+  import FortymmWeb.PaginationHelpers
+
   alias Fortymm.Administration.Users
+  alias Fortymm.Pagination
 
   plug FortymmWeb.Plugs.RequirePermission, "access_administration"
 
-  def index(conn, params) do
-    # Parse pagination params
-    page = parse_int(params["page"], 1)
-    per_page = parse_int(params["per_page"], 20)
+  @allowed_sort_fields [:id, :email, :username, :inserted_at, :updated_at, :confirmed_at]
 
-    # Parse sort params
-    sort_by = parse_sort_field(params["sort_by"], :inserted_at)
+  def index(conn, params) do
+    # Parse pagination params (page, per_page, filters)
+    pagination_opts = parse_pagination_params(params, filter_keys: [:search, :role_id])
+
+    # Parse sorting params separately
+    sort_by = parse_sort_field(params["sort_by"], :inserted_at, @allowed_sort_fields)
     sort_order = parse_sort_order(params["sort_order"], :desc)
 
-    # Parse filter params
-    search = params["search"]
-    role_id = params["role_id"]
-
-    # Get users with filters
-    result =
-      Users.list_users(
-        page: page,
-        per_page: per_page,
+    # Combine pagination and sorting options
+    opts =
+      Keyword.merge(pagination_opts, [
         sort_by: sort_by,
-        sort_order: sort_order,
-        search: search,
-        role_id: role_id
-      )
+        sort_order: sort_order
+      ])
+
+    # Get users with pagination and sorting
+    pagination = Users.list_users(opts)
 
     # Get roles for filter dropdown
     roles = Users.list_roles()
 
     conn
     |> assign(:active_nav, :administration)
-    |> assign(:users, result.users)
-    |> assign(:total, result.total)
-    |> assign(:page, result.page)
-    |> assign(:per_page, result.per_page)
-    |> assign(:total_pages, result.total_pages)
+    |> assign(:roles, roles)
     |> assign(:sort_by, sort_by)
     |> assign(:sort_order, sort_order)
-    |> assign(:search, search)
-    |> assign(:role_id, role_id)
-    |> assign(:roles, roles)
+    |> assign(Pagination.to_assigns(pagination, :users))
     |> render(:index)
   end
-
-  defp parse_int(nil, default), do: default
-
-  defp parse_int(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, ""} -> max(int, 1)
-      _ -> default
-    end
-  end
-
-  defp parse_int(_value, default), do: default
-
-  defp parse_sort_field(nil, default), do: default
-
-  defp parse_sort_field(value, default) when is_binary(value) do
-    case value do
-      "id" -> :id
-      "email" -> :email
-      "username" -> :username
-      "inserted_at" -> :inserted_at
-      "updated_at" -> :updated_at
-      "confirmed_at" -> :confirmed_at
-      _ -> default
-    end
-  end
-
-  defp parse_sort_field(_value, default), do: default
-
-  defp parse_sort_order(nil, default), do: default
-
-  defp parse_sort_order(value, default) when is_binary(value) do
-    case value do
-      "asc" -> :asc
-      "desc" -> :desc
-      _ -> default
-    end
-  end
-
-  defp parse_sort_order(_value, default), do: default
 end

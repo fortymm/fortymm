@@ -5,8 +5,9 @@ defmodule Fortymm.Administration.Permissions do
   """
 
   import Ecto.Query, warn: false
-  alias Fortymm.Repo
   alias Fortymm.Accounts.Permission
+  alias Fortymm.Pagination
+  alias Fortymm.Repo
 
   @doc """
   Lists permissions with optional filtering, sorting, and pagination.
@@ -17,23 +18,25 @@ defmodule Fortymm.Administration.Permissions do
     * `:per_page` - Number of items per page (defaults to 20)
     * `:sort_by` - Field to sort by (defaults to :name)
     * `:sort_order` - Sort order, either :asc or :desc (defaults to :asc)
-    * `:search` - Search term to filter by name or slug
+    * `:filters` - Map of filter parameters (search, etc.)
 
   ## Examples
 
       iex> list_permissions()
-      %{permissions: [...], total: 100, page: 1, per_page: 20, total_pages: 5}
+      %Pagination{entries: [...], total_entries: 100, page: 1, per_page: 20, total_pages: 5}
 
-      iex> list_permissions(search: "admin", sort_by: :slug)
-      %{permissions: [...], total: 5, page: 1, per_page: 20, total_pages: 1}
+      iex> list_permissions(filters: %{search: "admin"}, sort_by: :slug)
+      %Pagination{entries: [...], total_entries: 5, page: 1, per_page: 20, total_pages: 1}
 
   """
   def list_permissions(opts \\ []) do
-    page = max(Keyword.get(opts, :page, 1), 1)
+    page = Keyword.get(opts, :page, 1)
     per_page = Keyword.get(opts, :per_page, 20)
     sort_by = Keyword.get(opts, :sort_by, :name)
     sort_order = Keyword.get(opts, :sort_order, :asc)
-    search = Keyword.get(opts, :search)
+    filters = Keyword.get(opts, :filters, %{})
+
+    search = Map.get(filters, :search)
 
     query =
       Permission
@@ -41,22 +44,22 @@ defmodule Fortymm.Administration.Permissions do
       |> apply_search_filter(search)
       |> apply_sort(sort_by, sort_order)
 
-    total = Repo.aggregate(query, :count)
-    total_pages = max(ceil(total / per_page), 1)
+    total_entries = Repo.aggregate(query, :count)
+
+    # Create pagination struct with pagination options only
+    pagination = Pagination.new([], page: page, per_page: per_page, filters: filters)
 
     permissions =
       query
-      |> limit(^per_page)
-      |> offset(^((page - 1) * per_page))
+      |> Pagination.apply_to_query(pagination)
       |> Repo.all()
 
-    %{
-      permissions: permissions,
-      total: total,
+    Pagination.new(permissions,
       page: page,
       per_page: per_page,
-      total_pages: total_pages
-    }
+      total_entries: total_entries,
+      filters: filters
+    )
   end
 
   @doc """

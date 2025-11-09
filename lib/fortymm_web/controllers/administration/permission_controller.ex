@@ -1,80 +1,38 @@
 defmodule FortymmWeb.Administration.PermissionController do
   use FortymmWeb, :controller
 
+  import FortymmWeb.PaginationHelpers
+
   alias Fortymm.Administration.Permissions
+  alias Fortymm.Pagination
 
   plug FortymmWeb.Plugs.RequirePermission, "access_administration"
 
-  def index(conn, params) do
-    # Parse pagination params
-    page = parse_int(params["page"], 1)
-    per_page = parse_int(params["per_page"], 20)
+  @allowed_sort_fields [:id, :name, :slug, :inserted_at, :updated_at]
 
-    # Parse sort params
-    sort_by = parse_sort_field(params["sort_by"], :name)
+  def index(conn, params) do
+    # Parse pagination params (page, per_page, filters)
+    pagination_opts = parse_pagination_params(params, filter_keys: [:search])
+
+    # Parse sorting params separately
+    sort_by = parse_sort_field(params["sort_by"], :name, @allowed_sort_fields)
     sort_order = parse_sort_order(params["sort_order"], :asc)
 
-    # Parse filter params
-    search = params["search"]
-
-    # Get permissions with filters
-    result =
-      Permissions.list_permissions(
-        page: page,
-        per_page: per_page,
+    # Combine pagination and sorting options
+    opts =
+      Keyword.merge(pagination_opts, [
         sort_by: sort_by,
-        sort_order: sort_order,
-        search: search
-      )
+        sort_order: sort_order
+      ])
+
+    # Get permissions with pagination and sorting
+    pagination = Permissions.list_permissions(opts)
 
     conn
     |> assign(:active_nav, :administration)
-    |> assign(:permissions, result.permissions)
-    |> assign(:total, result.total)
-    |> assign(:page, result.page)
-    |> assign(:per_page, result.per_page)
-    |> assign(:total_pages, result.total_pages)
     |> assign(:sort_by, sort_by)
     |> assign(:sort_order, sort_order)
-    |> assign(:search, search)
+    |> assign(Pagination.to_assigns(pagination, :permissions))
     |> render(:index)
   end
-
-  defp parse_int(nil, default), do: default
-
-  defp parse_int(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, ""} -> max(int, 1)
-      _ -> default
-    end
-  end
-
-  defp parse_int(_value, default), do: default
-
-  defp parse_sort_field(nil, default), do: default
-
-  defp parse_sort_field(value, default) when is_binary(value) do
-    case value do
-      "id" -> :id
-      "name" -> :name
-      "slug" -> :slug
-      "inserted_at" -> :inserted_at
-      "updated_at" -> :updated_at
-      _ -> default
-    end
-  end
-
-  defp parse_sort_field(_value, default), do: default
-
-  defp parse_sort_order(nil, default), do: default
-
-  defp parse_sort_order(value, default) when is_binary(value) do
-    case value do
-      "asc" -> :asc
-      "desc" -> :desc
-      _ -> default
-    end
-  end
-
-  defp parse_sort_order(_value, default), do: default
 end

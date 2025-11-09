@@ -22,7 +22,7 @@
             type="text"
             name="search"
             id="search"
-            value={@search}
+            value={@pagination.filters[:search]}
             placeholder="Email or username..."
             class="input input-bordered"
           />
@@ -35,7 +35,10 @@
           <select name="role_id" id="role_id" class="select select-bordered">
             <option value="">All Roles</option>
             <%= for role <- @roles do %>
-              <option value={role.id} selected={@role_id == Integer.to_string(role.id)}>
+              <option
+                value={role.id}
+                selected={@pagination.filters[:role_id] == Integer.to_string(role.id)}
+              >
                 {role.name}
               </option>
             <% end %>
@@ -47,7 +50,7 @@
             <button type="submit" class="btn btn-primary">
               <.icon name="hero-magnifying-glass" class="w-4 h-4" /> Filter
             </button>
-            <%= if (@search && @search != "") || (@role_id && @role_id != "") do %>
+            <%= if @pagination.filters != %{} do %>
               <a href={~p"/administration/users"} class="btn btn-ghost">
                 <.icon name="hero-x-mark" class="w-4 h-4" /> Clear
               </a>
@@ -128,7 +131,7 @@
               <td colspan="6" class="text-center py-12">
                 <.icon name="hero-user-group" class="w-12 h-12 mx-auto mb-3 opacity-40" />
                 <p class="text-lg font-medium">No users found</p>
-                <%= if @search || @role_id do %>
+                <%= if @pagination.filters != %{} do %>
                   <p class="mt-1 text-sm opacity-70">Try adjusting your filters</p>
                 <% end %>
               </td>
@@ -179,18 +182,14 @@
     </div>
 
     <%!-- Pagination --%>
-    <%= if @total > 0 do %>
-      <.pagination_links
-        conn={@conn}
-        page={@page}
-        per_page={@per_page}
-        total={@total}
-        total_pages={@total_pages}
-        sort_by={@sort_by}
-        sort_order={@sort_order}
-        search={@search}
-        role_id={@role_id}
-      />
+    <%= if @total_entries > 0 do %>
+      <div class="card-body border-t border-base-300">
+        <.pagination
+          pagination={@pagination}
+          conn={@conn}
+          path_fn={fn _conn, params -> ~p"/administration/users?#{params}" end}
+        />
+      </div>
     <% end %>
   </div>
 </div>
