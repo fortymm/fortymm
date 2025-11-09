@@ -304,7 +304,13 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       assert updated_challenge.match_id
 
       # Acceptor should be redirected to scoring page
-      assert_redirect(lv, ~p"/matches/#{updated_challenge.match_id}/games/1/scores/new")
+      {:ok, match} = Matches.get_match(updated_challenge.match_id)
+      first_game = Enum.min_by(match.games, & &1.game_number)
+
+      assert_redirect(
+        lv,
+        ~p"/matches/#{updated_challenge.match_id}/games/#{first_game.id}/scores/new"
+      )
     end
 
     test "declining challenge updates status to rejected", %{conn: conn} do
@@ -559,7 +565,13 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
       # Acceptor should be redirected to scoring page
       {:ok, updated_challenge} = Matches.get_challenge(challenge.id)
       assert updated_challenge.match_id
-      assert_redirect(lv, ~p"/matches/#{updated_challenge.match_id}/games/1/scores/new")
+      {:ok, match} = Matches.get_match(updated_challenge.match_id)
+      first_game = Enum.min_by(match.games, & &1.game_number)
+
+      assert_redirect(
+        lv,
+        ~p"/matches/#{updated_challenge.match_id}/games/#{first_game.id}/scores/new"
+      )
     end
 
     test "declining challenge redirects to dashboard on success", %{conn: conn} do
@@ -599,6 +611,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
 
       # Accept the challenge
       {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
+      first_game = Enum.min_by(match.games, & &1.game_number)
 
       # Creator tries to view the show page
       assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
@@ -606,7 +619,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
                |> log_in_user(creator)
                |> live(~p"/challenges/#{challenge.id}")
 
-      assert path == ~p"/matches/#{match.id}/games/1/scores/new"
+      assert path == ~p"/matches/#{match.id}/games/#{first_game.id}/scores/new"
       assert flash == %{"info" => "Challenge accepted! Time to enter scores"}
     end
 
@@ -624,6 +637,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
 
       # Accept the challenge
       {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
+      first_game = Enum.min_by(match.games, & &1.game_number)
 
       # Acceptor tries to view the show page
       assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
@@ -631,7 +645,7 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
                |> log_in_user(acceptor)
                |> live(~p"/challenges/#{challenge.id}")
 
-      assert path == ~p"/matches/#{match.id}/games/1/scores/new"
+      assert path == ~p"/matches/#{match.id}/games/#{first_game.id}/scores/new"
       assert flash == %{"info" => "Challenge accepted! Time to enter scores"}
     end
   end
@@ -785,12 +799,13 @@ defmodule FortymmWeb.ChallengeLive.ShowTest do
 
       # Challenge is accepted (via the proper flow which sets match_id)
       {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
+      first_game = Enum.min_by(match.games, & &1.game_number)
 
       # Give PubSub a moment to deliver the message
       Process.sleep(50)
 
       # Acceptor should be redirected to scoring page
-      assert_redirect(lv, ~p"/matches/#{match.id}/games/1/scores/new")
+      assert_redirect(lv, ~p"/matches/#{match.id}/games/#{first_game.id}/scores/new")
     end
 
     test "non-participant viewer on show page redirects to match when challenge is accepted", %{
