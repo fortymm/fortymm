@@ -13,6 +13,8 @@ defmodule Fortymm.Matches.Game do
   @primary_key {:id, :string, autogenerate: false}
   embedded_schema do
     field :game_number, :integer
+
+    embeds_many :score_proposals, Fortymm.Matches.ScoreProposal
   end
 
   @doc """
@@ -30,6 +32,7 @@ defmodule Fortymm.Matches.Game do
   def changeset(game, attrs) do
     game
     |> cast(attrs, [:game_number])
+    |> cast_embed(:score_proposals)
     |> validate_required([:game_number])
     |> validate_number(:game_number, greater_than: 0, message: "must be greater than 0")
   end
