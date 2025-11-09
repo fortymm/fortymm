@@ -494,6 +494,21 @@ defmodule FortymmWeb.Administration.PermissionControllerTest do
   end
 
   describe "UI Components" do
+    test "displays breadcrumb navigation", %{conn: conn} do
+      admin = admin_user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(admin)
+        |> get(~p"/administration/permissions")
+
+      html = html_response(conn, 200)
+      assert html =~ "Breadcrumb"
+      assert html =~ "Administration"
+      assert html =~ "Permissions"
+      assert html =~ "/administration"
+    end
+
     test "uses daisyUI card components", %{conn: conn} do
       admin = admin_user_fixture()
 

@@ -393,6 +393,47 @@ defmodule FortymmWeb.CoreComponents do
   end
 
   @doc """
+  Renders breadcrumb navigation.
+
+  ## Examples
+
+      <.breadcrumb items={[{"Administration", ~p"/administration"}, "Users"]} />
+      <.breadcrumb items={["Administration"]} />
+  """
+  attr :items, :list,
+    required: true,
+    doc: "list of breadcrumb items (strings or {label, path} tuples)"
+
+  def breadcrumb(assigns) do
+    ~H"""
+    <nav aria-label="Breadcrumb" class="mb-6">
+      <ol class="flex items-center space-x-2 text-sm">
+        <%= for {item, index} <- Enum.with_index(@items) do %>
+          <%= if index > 0 do %>
+            <li class="flex items-center">
+              <.icon name="hero-chevron-right" class="size-4 text-base-content/40" />
+            </li>
+          <% end %>
+          <li class="flex items-center">
+            <%= if is_tuple(item) do %>
+              <% {label, path} = item %>
+              <.link
+                href={path}
+                class="text-base-content/60 hover:text-base-content transition-colors duration-150"
+              >
+                {label}
+              </.link>
+            <% else %>
+              <span class="font-medium text-base-content">{item}</span>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+    </nav>
+    """
+  end
+
+  @doc """
   Renders a [Heroicon](https://heroicons.com).
 
   Heroicons come in three styles – outline, solid, and mini.
