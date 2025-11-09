@@ -62,6 +62,7 @@ defmodule FortymmWeb.Router do
     end
 
     post "/users/update-password", UserSessionController, :update_password
+    get "/settings/appearance", SettingsController, :appearance
   end
 
   ## Administration routes
