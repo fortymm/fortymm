@@ -1,7 +1,7 @@
 defmodule Fortymm.Matches.CreationTest do
   use ExUnit.Case, async: true
 
-  alias Fortymm.Matches.{Challenge, Configuration, Creation, Match, MatchStore}
+  alias Fortymm.Matches.{Challenge, Configuration, Creation, Game, Match, MatchStore}
 
   setup do
     # Clear the match store before each test
@@ -342,6 +342,68 @@ defmodule Fortymm.Matches.CreationTest do
 
       assert match1_participant_2.user_id == 2
       assert match2_participant_2.user_id == 3
+    end
+
+    test "creates first game when match is created" do
+      challenge = %Challenge{
+        id: "test-challenge-id",
+        created_by_id: 1,
+        status: "pending",
+        configuration: %Configuration{
+          id: nil,
+          length_in_games: 3,
+          rated: false
+        }
+      }
+
+      assert {:ok, match} = Creation.from_challenge(challenge, 2)
+      assert length(match.games) == 1
+
+      game = List.first(match.games)
+      assert %Game{} = game
+      assert game.game_number == 1
+    end
+
+    test "assigns unique ID to first game" do
+      challenge = %Challenge{
+        id: "test-challenge-id",
+        created_by_id: 1,
+        status: "pending",
+        configuration: %Configuration{
+          id: nil,
+          length_in_games: 3,
+          rated: false
+        }
+      }
+
+      assert {:ok, match} = Creation.from_challenge(challenge, 2)
+      game = List.first(match.games)
+
+      assert is_binary(game.id)
+      assert String.length(game.id) > 0
+    end
+
+    test "creates games with unique IDs across matches" do
+      challenge = %Challenge{
+        id: "test-challenge-id",
+        created_by_id: 1,
+        status: "pending",
+        configuration: %Configuration{
+          id: nil,
+          length_in_games: 3,
+          rated: false
+        }
+      }
+
+      assert {:ok, match1} = Creation.from_challenge(challenge, 2)
+      assert {:ok, match2} = Creation.from_challenge(challenge, 3)
+
+      game1 = List.first(match1.games)
+      game2 = List.first(match2.games)
+
+      assert game1.id != game2.id
+      assert is_binary(game1.id)
+      assert is_binary(game2.id)
     end
   end
 end

@@ -10,13 +10,14 @@ defmodule Fortymm.Matches.Match do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Fortymm.Matches.{Configuration, Participant}
+  alias Fortymm.Matches.{Configuration, Game, Participant}
 
   @valid_statuses ["pending", "in_progress", "canceled", "aborted", "complete"]
 
   embedded_schema do
     embeds_one :match_configuration, Configuration
     embeds_many :participants, Participant
+    embeds_many :games, Game
     field :status, :string, default: "pending"
   end
 
@@ -37,6 +38,7 @@ defmodule Fortymm.Matches.Match do
     |> cast(attrs, [:status])
     |> cast_embed(:match_configuration, required: true)
     |> cast_embed(:participants)
+    |> cast_embed(:games)
     |> validate_required([:status])
     |> validate_inclusion(:status, @valid_statuses,
       message: "must be one of: #{Enum.join(@valid_statuses, ", ")}"
