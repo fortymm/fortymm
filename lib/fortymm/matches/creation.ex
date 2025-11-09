@@ -59,6 +59,9 @@ defmodule Fortymm.Matches.Creation do
       participants: [
         %{user_id: challenge.created_by_id, participant_number: 1},
         %{user_id: acceptor_id, participant_number: 2}
+      ],
+      games: [
+        %{game_number: 1}
       ]
     }
 
@@ -66,10 +69,19 @@ defmodule Fortymm.Matches.Creation do
 
     if changeset.valid? do
       match = Ecto.Changeset.apply_changes(changeset)
+
+      # Assign IDs to match and games
       match_with_id = %{match | id: generate_id()}
 
-      MatchStore.insert(match_with_id.id, match_with_id)
-      {:ok, match_with_id}
+      games_with_ids =
+        Enum.map(match_with_id.games, fn game ->
+          %{game | id: generate_id()}
+        end)
+
+      match_with_game_ids = %{match_with_id | games: games_with_ids}
+
+      MatchStore.insert(match_with_game_ids.id, match_with_game_ids)
+      {:ok, match_with_game_ids}
     else
       {:error, changeset}
     end
