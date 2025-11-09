@@ -131,6 +131,156 @@ defmodule Fortymm.Matches.GameTest do
       refute changeset.valid?
       assert "is invalid" in errors_on(changeset).game_number
     end
+
+    test "accepts embedded score_proposals" do
+      changeset =
+        Game.changeset(%Game{}, %{
+          game_number: 1,
+          score_proposals: [
+            %{
+              proposed_by_participant_id: 1,
+              scores: [
+                %{match_participant_id: 1, score: 11},
+                %{match_participant_id: 2, score: 9}
+              ]
+            }
+          ]
+        })
+
+      assert changeset.valid?
+      score_proposals = Ecto.Changeset.get_field(changeset, :score_proposals)
+      assert length(score_proposals) == 1
+    end
+
+    test "accepts multiple score_proposals" do
+      changeset =
+        Game.changeset(%Game{}, %{
+          game_number: 1,
+          score_proposals: [
+            %{
+              proposed_by_participant_id: 1,
+              scores: [
+                %{match_participant_id: 1, score: 11},
+                %{match_participant_id: 2, score: 8}
+              ]
+            },
+            %{
+              proposed_by_participant_id: 2,
+              scores: [
+                %{match_participant_id: 1, score: 9},
+                %{match_participant_id: 2, score: 11}
+              ]
+            }
+          ]
+        })
+
+      assert changeset.valid?
+      score_proposals = Ecto.Changeset.get_field(changeset, :score_proposals)
+      assert length(score_proposals) == 2
+    end
+
+    test "accepts empty score_proposals" do
+      changeset =
+        Game.changeset(%Game{}, %{
+          game_number: 1,
+          score_proposals: []
+        })
+
+      assert changeset.valid?
+    end
+
+    test "validates nested score_proposal changesets" do
+      changeset =
+        Game.changeset(%Game{}, %{
+          game_number: 1,
+          score_proposals: [
+            %{
+              proposed_by_participant_id: 1,
+              scores: [
+                %{match_participant_id: 1, score: -5},
+                %{match_participant_id: 2, score: 21}
+              ]
+            }
+          ]
+        })
+
+      refute changeset.valid?
+      errors = errors_on(changeset)
+
+      assert %{
+               score_proposals: [%{scores: [%{score: ["must be greater than or equal to 0"]}, _]}]
+             } = errors
+    end
+
+    test "rejects score_proposal with single score" do
+      changeset =
+        Game.changeset(%Game{}, %{
+          game_number: 1,
+          score_proposals: [
+            %{
+              proposed_by_participant_id: 1,
+              scores: [
+                %{match_participant_id: 1, score: 21}
+              ]
+            }
+          ]
+        })
+
+      refute changeset.valid?
+      errors = errors_on(changeset)
+      assert %{score_proposals: [%{scores: ["must have exactly 2 scores"]}]} = errors
+    end
+
+    test "rejects score_proposal with more than 2 scores" do
+      changeset =
+        Game.changeset(%Game{}, %{
+          game_number: 1,
+          score_proposals: [
+            %{
+              proposed_by_participant_id: 1,
+              scores: [
+                %{match_participant_id: 1, score: 21},
+                %{match_participant_id: 2, score: 19},
+                %{match_participant_id: 1, score: 15}
+              ]
+            }
+          ]
+        })
+
+      refute changeset.valid?
+      errors = errors_on(changeset)
+      assert %{score_proposals: [%{scores: ["must have exactly 2 scores"]}]} = errors
+    end
+
+    test "validates all nested score_proposal data" do
+      changeset =
+        Game.changeset(%Game{}, %{
+          game_number: 1,
+          score_proposals: [
+            %{
+              scores: [
+                %{match_participant_id: 1, score: 21},
+                %{match_participant_id: 2, score: 19}
+              ]
+            }
+          ]
+        })
+
+      refute changeset.valid?
+      errors = errors_on(changeset)
+      assert %{score_proposals: [%{proposed_by_participant_id: ["can't be blank"]}]} = errors
+    end
+
+    test "can have game with valid data and no score_proposals" do
+      changeset =
+        Game.changeset(%Game{}, %{
+          game_number: 1
+        })
+
+      assert changeset.valid?
+      score_proposals = Ecto.Changeset.get_field(changeset, :score_proposals)
+      assert score_proposals == []
+    end
   end
 
   # Helper function to extract error messages
