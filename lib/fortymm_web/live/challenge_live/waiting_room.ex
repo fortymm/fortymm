@@ -280,20 +280,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
   defp redirect_to_match(socket, match_id, current_user_id) do
     case Matches.get_match(match_id) do
       {:ok, match} ->
-        is_participant =
-          Enum.any?(match.participants, fn p -> p.user_id == current_user_id end)
-
-        if is_participant do
-          {:ok,
-           socket
-           |> put_flash(:info, "Challenge accepted! Time to enter scores")
-           |> push_navigate(to: ~p"/matches/#{match_id}/games/1/scores/new")}
-        else
-          {:ok,
-           socket
-           |> put_flash(:info, "Challenge accepted! The match has begun")
-           |> push_navigate(to: ~p"/matches/#{match_id}")}
-        end
+        redirect_based_on_match(socket, match, match_id, current_user_id)
 
       {:error, :not_found} ->
         # Fallback to match page if match not found
@@ -301,6 +288,39 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoom do
          socket
          |> put_flash(:info, "Challenge accepted! The match has begun")
          |> push_navigate(to: ~p"/matches/#{match_id}")}
+    end
+  end
+
+  defp redirect_based_on_match(socket, match, match_id, current_user_id) do
+    is_participant =
+      Enum.any?(match.participants, fn p -> p.user_id == current_user_id end)
+
+    if is_participant do
+      case get_first_game(match.games) do
+        {:ok, first_game} ->
+          {:ok,
+           socket
+           |> put_flash(:info, "Challenge accepted! Time to enter scores")
+           |> push_navigate(to: ~p"/matches/#{match_id}/games/#{first_game.id}/scores/new")}
+
+        {:error, :no_game} ->
+          {:ok,
+           socket
+           |> put_flash(:error, "No game found for this match.")
+           |> push_navigate(to: ~p"/dashboard")}
+      end
+    else
+      {:ok,
+       socket
+       |> put_flash(:info, "Challenge accepted! The match has begun")
+       |> push_navigate(to: ~p"/matches/#{match_id}")}
+    end
+  end
+
+  defp get_first_game(games) do
+    case Enum.min_by(games, & &1.game_number, fn -> nil end) do
+      nil -> {:error, :no_game}
+      game -> {:ok, game}
     end
   end
 end

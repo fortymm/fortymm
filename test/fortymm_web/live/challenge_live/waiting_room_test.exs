@@ -619,6 +619,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
 
       # Accept the challenge
       {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
+      first_game = Enum.min_by(match.games, & &1.game_number)
 
       # Creator tries to view the waiting room
       assert {:error, {:live_redirect, %{to: path, flash: flash}}} =
@@ -626,7 +627,7 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
                |> log_in_user(creator)
                |> live(~p"/challenges/#{challenge.id}/waiting_room")
 
-      assert path == ~p"/matches/#{match.id}/games/1/scores/new"
+      assert path == ~p"/matches/#{match.id}/games/#{first_game.id}/scores/new"
       assert flash == %{"info" => "Challenge accepted! Time to enter scores"}
     end
 
@@ -804,12 +805,13 @@ defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
 
       # Challenge is accepted by acceptor
       {:ok, match} = Matches.accept_challenge(challenge.id, acceptor.id)
+      first_game = Enum.min_by(match.games, & &1.game_number)
 
       # Give PubSub a moment to deliver the message
       Process.sleep(50)
 
       # Creator should be redirected to scoring page
-      assert_redirect(lv, ~p"/matches/#{match.id}/games/1/scores/new")
+      assert_redirect(lv, ~p"/matches/#{match.id}/games/#{first_game.id}/scores/new")
     end
 
     test "creator on waiting room redirects to dashboard when challenge is cancelled", %{
