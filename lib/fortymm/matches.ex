@@ -291,6 +291,98 @@ defmodule Fortymm.Matches do
     MatchStore.get(id)
   end
 
+  @doc """
+  Lists matches with filtering, sorting, and pagination.
+
+  ## Options
+
+    * `:page` - Page number (defaults to 1, minimum 1)
+    * `:per_page` - Items per page (defaults to 20)
+    * `:sort_by` - Field to sort by (defaults to :id)
+    * `:sort_order` - Sort direction (:asc or :desc, defaults to :asc)
+    * `:search` - Search term for match IDs (case-insensitive substring match)
+    * `:status` - Filter by match status
+
+  ## Examples
+
+      iex> list_matches(page: 1, per_page: 20)
+      %{matches: [...], total: 42, page: 1, per_page: 20, total_pages: 3}
+
+      iex> list_matches(search: "abc", status: "complete")
+      %{matches: [...], total: 5, ...}
+
+  """
+  def list_matches(opts \\ []) do
+    page = max(Keyword.get(opts, :page, 1), 1)
+    per_page = Keyword.get(opts, :per_page, 20)
+    sort_by = Keyword.get(opts, :sort_by, :id)
+    sort_order = Keyword.get(opts, :sort_order, :asc)
+    search = Keyword.get(opts, :search)
+    status = Keyword.get(opts, :status)
+
+    all_matches = MatchStore.list_all()
+
+    matches =
+      all_matches
+      |> apply_search_filter(search)
+      |> apply_status_filter(status)
+      |> apply_sort(sort_by, sort_order)
+
+    total = length(matches)
+    total_pages = max(ceil(total / per_page), 1)
+
+    paginated_matches =
+      matches
+      |> Enum.drop((page - 1) * per_page)
+      |> Enum.take(per_page)
+
+    %{
+      matches: paginated_matches,
+      total: total,
+      page: page,
+      per_page: per_page,
+      total_pages: total_pages
+    }
+  end
+
+  defp apply_search_filter(matches, nil), do: matches
+  defp apply_search_filter(matches, ""), do: matches
+
+  defp apply_search_filter(matches, search) when is_binary(search) do
+    search_lower = String.downcase(search)
+
+    Enum.filter(matches, fn match ->
+      match.id && String.contains?(String.downcase(match.id), search_lower)
+    end)
+  end
+
+  defp apply_status_filter(matches, nil), do: matches
+  defp apply_status_filter(matches, ""), do: matches
+
+  defp apply_status_filter(matches, status) when is_binary(status) do
+    Enum.filter(matches, fn match ->
+      match.status == status
+    end)
+  end
+
+  defp apply_sort(matches, sort_by, sort_order)
+       when sort_by in [:id, :status] and sort_order in [:asc, :desc] do
+    matches
+    |> Enum.sort_by(
+      fn match ->
+        case sort_by do
+          :id -> match.id || ""
+          :status -> match.status || ""
+        end
+      end,
+      sort_order
+    )
+  end
+
+  defp apply_sort(matches, _sort_by, _sort_order) do
+    Enum.sort_by(matches, & &1.id, :asc)
+  end
+
   defp generate_id do
     :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
   end

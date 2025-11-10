@@ -50,6 +50,8 @@ defmodule FortymmWeb.Router do
   scope "/", FortymmWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    get "/matches", MatchController, :index
+
     live_session :require_authenticated_user,
       on_mount: [{FortymmWeb.UserAuth, :require_authenticated}] do
       live "/dashboard", DashboardLive, :index
