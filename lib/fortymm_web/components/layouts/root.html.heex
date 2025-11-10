@@ -129,6 +129,14 @@
                 <.icon name="hero-home" class="size-5" /> Dashboard
               </.link>
             </li>
+            <li>
+              <.link
+                href={~p"/matches"}
+                class={[assigns[:active_nav] == :matches && "menu-active"]}
+              >
+                <.icon name="hero-square-3-stack-3d" class="size-5" /> Matches
+              </.link>
+            </li>
           </ul>
           <%= if Fortymm.Accounts.has_permission?(@current_scope.user, "access_administration") do %>
             <ul class="menu menu-lg bg-base-100 w-full p-2">
@@ -167,6 +175,14 @@
                   class={[assigns[:active_nav] == :dashboard && "menu-active"]}
                 >
                   <.icon name="hero-home" class="size-5" /> Dashboard
+                </.link>
+              </li>
+              <li>
+                <.link
+                  href={~p"/matches"}
+                  class={[assigns[:active_nav] == :matches && "menu-active"]}
+                >
+                  <.icon name="hero-square-3-stack-3d" class="size-5" /> Matches
                 </.link>
               </li>
             </ul>

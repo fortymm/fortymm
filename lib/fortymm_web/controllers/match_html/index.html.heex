@@ -1,0 +1,164 @@
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+  <.breadcrumb items={[{"Home", ~p"/"}, "Matches"]} />
+
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold">Matches</h1>
+    <p class="text-base-content/70 mt-2">
+      Browse and manage all matches
+    </p>
+  </div>
+
+  <%!-- Filters Section --%>
+  <div class="card bg-base-100 mb-6">
+    <div class="card-body">
+      <form
+        method="get"
+        action={~p"/matches"}
+        class="grid grid-cols-1 gap-4 md:grid-cols-2"
+      >
+        <div class="form-control">
+          <label class="label" for="search">
+            <span class="label-text">Search</span>
+          </label>
+          <input
+            type="text"
+            name="search"
+            id="search"
+            value={@search}
+            placeholder="Match ID..."
+            class="input input-bordered"
+          />
+        </div>
+
+        <div class="form-control">
+          <label class="label" for="status">
+            <span class="label-text">Status</span>
+          </label>
+          <select name="status" id="status" class="select select-bordered">
+            <option value="">All Statuses</option>
+            <option value="pending" selected={@status == "pending"}>Pending</option>
+            <option value="in_progress" selected={@status == "in_progress"}>In Progress</option>
+            <option value="complete" selected={@status == "complete"}>Complete</option>
+            <option value="canceled" selected={@status == "canceled"}>Canceled</option>
+            <option value="aborted" selected={@status == "aborted"}>Aborted</option>
+          </select>
+        </div>
+
+        <div class="form-control md:col-span-2 md:flex md:flex-row md:items-end gap-2">
+          <button type="submit" class="btn btn-primary">
+            <.icon name="hero-magnifying-glass" class="w-4 h-4" /> Filter
+          </button>
+          <%= if (@search && @search != "") || (@status && @status != "") do %>
+            <a href={~p"/matches"} class="btn btn-ghost">
+              <.icon name="hero-x-mark" class="w-4 h-4" /> Clear
+            </a>
+          <% end %>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <%!-- Matches Table --%>
+  <div class="card bg-base-100">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:id}
+                label="Match ID"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+                status={@status}
+              />
+            </th>
+            <th>Participants</th>
+            <th>
+              <.sort_link
+                conn={@conn}
+                field={:status}
+                label="Status"
+                current_sort_by={@sort_by}
+                current_sort_order={@sort_order}
+                search={@search}
+                status={@status}
+              />
+            </th>
+            <th>Configuration</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= if @matches == [] do %>
+            <tr>
+              <td colspan="5" class="text-center py-12">
+                <.icon name="hero-square-3-stack-3d" class="w-12 h-12 mx-auto mb-3 opacity-40" />
+                <p class="text-lg font-medium">No matches found</p>
+                <%= if @search || @status do %>
+                  <p class="mt-1 text-sm opacity-70">Try adjusting your filters</p>
+                <% end %>
+              </td>
+            </tr>
+          <% else %>
+            <%= for match <- @matches do %>
+              <tr>
+                <td class="font-mono text-sm">{String.slice(match.id, 0..7)}</td>
+                <td>
+                  <div class="flex flex-col gap-1">
+                    <%= for participant <- match.participants do %>
+                      <span class="text-sm">Player {participant.participant_number}</span>
+                    <% end %>
+                  </div>
+                </td>
+                <td>
+                  <% status_badge =
+                    case match.status do
+                      "pending" -> "badge-warning"
+                      "in_progress" -> "badge-info"
+                      "complete" -> "badge-success"
+                      "canceled" -> "badge-neutral"
+                      "aborted" -> "badge-error"
+                      _ -> "badge-ghost"
+                    end %>
+                  <span class={["badge", status_badge]}>
+                    {String.replace(match.status, "_", " ") |> String.capitalize()}
+                  </span>
+                </td>
+                <td class="text-sm opacity-70">
+                  <%= if match.match_configuration do %>
+                    <span>Best of {match.match_configuration.length_in_games}</span>
+                  <% else %>
+                    <span>—</span>
+                  <% end %>
+                </td>
+                <td>
+                  <a href={~p"/matches/#{match.id}"} class="btn btn-ghost btn-xs">
+                    <.icon name="hero-arrow-top-right-on-square" class="w-4 h-4" /> View
+                  </a>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%!-- Pagination --%>
+    <%= if @total > 0 do %>
+      <.pagination_links
+        conn={@conn}
+        page={@page}
+        per_page={@per_page}
+        total={@total}
+        total_pages={@total_pages}
+        sort_by={@sort_by}
+        sort_order={@sort_order}
+        search={@search}
+        status={@status}
+      />
+    <% end %>
+  </div>
+</div>
