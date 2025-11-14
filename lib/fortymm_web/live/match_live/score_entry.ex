@@ -186,11 +186,43 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
       )
 
     if changeset.valid? do
-      # For now, just show success message
-      {:noreply,
-       socket
-       |> put_flash(:info, "Score saved successfully!")
-       |> push_navigate(to: ~p"/matches/#{socket.assigns.match.id}")}
+      match = socket.assigns.match
+      score_entry = Ecto.Changeset.apply_changes(changeset)
+
+      # Store the score proposal in the game
+      game_with_score =
+        add_score_proposal_to_game(socket.assigns.game, score_entry.score_proposal)
+
+      match_with_updated_game = update_game_in_match(match, game_with_score)
+
+      # Update the match in storage
+      Matches.MatchStore.insert(match.id, match_with_updated_game)
+
+      # Check if match is complete
+      if match_winner_determined?(match_with_updated_game) do
+        # Match is over, redirect to match details
+        {:noreply,
+         socket
+         |> put_flash(:info, "Score saved! Match complete!")
+         |> push_navigate(to: ~p"/matches/#{match.id}")}
+      else
+        # Create next game and redirect to score entry for it
+        case create_next_game(match_with_updated_game) do
+          {:ok, next_game, updated_match} ->
+            Matches.MatchStore.insert(match.id, updated_match)
+
+            {:noreply,
+             socket
+             |> put_flash(:info, "Score saved! Starting next game...")
+             |> push_navigate(to: ~p"/matches/#{match.id}/games/#{next_game.id}/scores/new")}
+
+          {:error, _reason} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to create next game")
+             |> push_navigate(to: ~p"/matches/#{match.id}")}
+        end
+      end
     else
       {:noreply, assign(socket, :form, to_form(Map.put(changeset, :action, :validate)))}
     end
@@ -277,5 +309,118 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
       _ ->
         ""
     end
+  end
+
+  defp add_score_proposal_to_game(game, score_proposal) do
+    %{game | score_proposals: [score_proposal | game.score_proposals]}
+  end
+
+  defp update_game_in_match(match, updated_game) do
+    updated_games =
+      Enum.map(match.games, fn game ->
+        if game.id == updated_game.id, do: updated_game, else: game
+      end)
+
+    %{match | games: updated_games}
+  end
+
+  defp match_winner_determined?(match) do
+    games_won_per_participant = calculate_games_won_per_participant(match)
+    required_wins = required_wins_for_match(match.match_configuration.length_in_games)
+
+    Enum.any?(games_won_per_participant, fn {_participant_id, games_won} ->
+      games_won >= required_wins
+    end)
+  end
+
+  defp calculate_games_won_per_participant(match) do
+    match.participants
+    |> Enum.map(fn participant ->
+      games_won = count_games_won(participant, match.games)
+      {participant.id, games_won}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defp count_games_won(participant, games) do
+    games
+    |> Enum.count(fn game -> participant_won_game?(game, participant) end)
+  end
+
+  defp participant_won_game?(game, participant) do
+    case final_score_proposal(game) do
+      nil -> false
+      proposal -> participant_won?(participant, proposal)
+    end
+  end
+
+  defp participant_won?(participant, proposal) do
+    Enum.any?(proposal.scores, fn score ->
+      score.match_participant_id == participant.id && winner?(score, proposal)
+    end)
+  end
+
+  defp winner?(score, proposal) do
+    player_score = score.score
+    opponent_score = get_opponent_score(score, proposal.scores)
+
+    case opponent_score do
+      nil -> false
+      _ -> wins_by_rules?(player_score, opponent_score)
+    end
+  end
+
+  defp get_opponent_score(player_score, [score1, score2]) do
+    if score1.match_participant_id == player_score.match_participant_id do
+      score2.score
+    else
+      score1.score
+    end
+  end
+
+  defp get_opponent_score(_player_score, _scores), do: nil
+
+  defp wins_by_rules?(player_score, _opponent_score) when player_score < 11, do: false
+
+  defp wins_by_rules?(_player_score, opponent_score) when opponent_score < 10,
+    do: true
+
+  defp wins_by_rules?(player_score, opponent_score),
+    do: player_score - opponent_score >= 2
+
+  defp final_score_proposal(game) do
+    case game.score_proposals do
+      [proposal] -> proposal
+      [_ | _] = proposals -> List.last(proposals)
+      [] -> nil
+    end
+  end
+
+  defp required_wins_for_match(length_in_games) do
+    # For best-of-3: need 2 wins
+    # For best-of-5: need 3 wins
+    # Formula: (length_in_games // 2) + 1
+    div(length_in_games, 2) + 1
+  end
+
+  defp create_next_game(match) do
+    next_game_number = Enum.count(match.games) + 1
+
+    if next_game_number <= match.match_configuration.length_in_games do
+      game = %Fortymm.Matches.Game{
+        id: generate_id(),
+        game_number: next_game_number,
+        score_proposals: []
+      }
+
+      updated_match = %{match | games: match.games ++ [game]}
+      {:ok, game, updated_match}
+    else
+      {:error, :match_complete}
+    end
+  end
+
+  defp generate_id do
+    :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
   end
 end
