@@ -35,15 +35,9 @@ RUN apt-get update && apt-get install -y \
     watchman \
     && rm -rf /var/lib/apt/lists/*
 
-# Install asdf
-ENV ASDF_DIR=/opt/asdf
-RUN git clone https://github.com/asdf-vm/asdf.git $ASDF_DIR --branch v0.14.0 && \
-    echo '. /opt/asdf/asdf.sh' >> ~/.bashrc
-
-# Add asdf to PATH
-ENV PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:${PATH}"
-
-RUN echo "legacy_version_file = yes" >> ~/.asdfrc
+# Install mise
+RUN curl https://mise.jdx.dev/install.sh | sh
+ENV PATH="/root/.local/share/mise/shims:/root/.local/bin:${PATH}"
 
 # Set working directory for the application
 WORKDIR /workspace
@@ -51,16 +45,11 @@ WORKDIR /workspace
 # Copy .tool-versions file to workspace
 COPY .tool-versions /workspace/.tool-versions
 
-# Install asdf plugins and tools
-RUN . $ASDF_DIR/asdf.sh && \
-    asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git && \
-    asdf plugin add elixir https://github.com/asdf-vm/asdf-elixir.git && \
-    asdf install && \
-    asdf reshim
+# Install tools via mise
+RUN bash -c 'eval "$(~/.local/bin/mise activate bash)" && mise install'
 
 # Install Hex and Rebar
-RUN . $ASDF_DIR/asdf.sh && \
-    mix local.hex --force && \
+RUN mix local.hex --force && \
     mix local.rebar --force
 
 CMD ["/bin/bash"]

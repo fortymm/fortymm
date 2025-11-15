@@ -30,5 +30,5 @@
       }
     }
   },
-  "postCreateCommand": "bash -c '. /opt/asdf/asdf.sh && while ! pg_isready -h db -U postgres; do sleep 1; done && mix setup'"
+  "postCreateCommand": "bash -c 'eval \"$(~/.local/bin/mise activate bash)\" && while ! pg_isready -h db -U postgres; do sleep 1; done && mix setup'"
 }
