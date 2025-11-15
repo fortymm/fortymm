@@ -29,6 +29,16 @@ defmodule Fortymm.DataCase do
 
   setup tags do
     Fortymm.DataCase.setup_sandbox(tags)
+
+    # Clear ETS stores before each test to avoid test interference
+    if :ets.whereis(:match_store) != :undefined do
+      :ets.delete_all_objects(:match_store)
+    end
+
+    if :ets.whereis(:challenge_store) != :undefined do
+      :ets.delete_all_objects(:challenge_store)
+    end
+
     :ok
   end
 

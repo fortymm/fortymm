@@ -1,5 +1,5 @@
 defmodule Fortymm.Matches.GameTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Fortymm.Matches.Game
 
