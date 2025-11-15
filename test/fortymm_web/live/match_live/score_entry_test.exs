@@ -636,6 +636,118 @@ defmodule FortymmWeb.MatchLive.ScoreEntryTest do
     end
   end
 
+  describe "Match status transitions" do
+    test "match status changes from pending to in_progress when first score is entered", %{
+      conn: conn
+    } do
+      user1 = user_fixture(username: "status_user1")
+      user2 = user_fixture(username: "status_user2")
+      match = create_match(user1, user2)
+
+      # Verify match starts as pending
+      assert match.status == "pending"
+
+      game = Enum.at(match.games, 0)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game.id}/scores/new")
+
+      # Submit first score
+      _result =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "11",
+          "score_entry[score_proposal][scores][1][score]" => "5"
+        })
+        |> render_submit()
+
+      # Verify match status is now in_progress
+      {:ok, updated_match} = Matches.get_match(match.id)
+      assert updated_match.status == "in_progress"
+    end
+
+    test "match status changes from in_progress to complete when match winner is determined", %{
+      conn: conn
+    } do
+      user1 = user_fixture(username: "complete_user1")
+      user2 = user_fixture(username: "complete_user2")
+      match = create_match(user1, user2)
+
+      participant1 = Enum.at(match.participants, 0)
+      participant2 = Enum.at(match.participants, 1)
+
+      # Set up game 1 with participant1 winning
+      game1 = Enum.at(match.games, 0)
+
+      score_proposal1 = %ScoreProposal{
+        id: generate_id(),
+        proposed_by_participant_id: participant1.id,
+        scores: [
+          %Fortymm.Matches.Score{match_participant_id: participant1.id, score: 11},
+          %Fortymm.Matches.Score{match_participant_id: participant2.id, score: 5}
+        ]
+      }
+
+      game1_with_score = %{game1 | score_proposals: [score_proposal1]}
+
+      # Create and add game 2
+      game2 = %Fortymm.Matches.Game{
+        id: generate_id(),
+        game_number: 2,
+        score_proposals: []
+      }
+
+      match_with_both_games = %{match | games: [game1_with_score, game2], status: "in_progress"}
+      Matches.MatchStore.insert(match.id, match_with_both_games)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game2.id}/scores/new")
+
+      # Submit score for game 2 that completes the match
+      _result =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "11",
+          "score_entry[score_proposal][scores][1][score]" => "8"
+        })
+        |> render_submit()
+
+      # Verify match status is now complete
+      {:ok, final_match} = Matches.get_match(match.id)
+      assert final_match.status == "complete"
+    end
+
+    test "match status stays in_progress when match is not yet complete", %{conn: conn} do
+      user1 = user_fixture(username: "inprog_user1")
+      user2 = user_fixture(username: "inprog_user2")
+      match = create_match(user1, user2)
+
+      game = Enum.at(match.games, 0)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game.id}/scores/new")
+
+      # Submit first score (participant1 gets 1 win, needs 2 for best-of-3)
+      _result =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "11",
+          "score_entry[score_proposal][scores][1][score]" => "6"
+        })
+        |> render_submit()
+
+      # Verify match status is in_progress, not complete
+      {:ok, updated_match} = Matches.get_match(match.id)
+      assert updated_match.status == "in_progress"
+    end
+  end
+
   describe "Score entry redirect behavior" do
     test "redirects to next game when match is not complete after score entry", %{conn: conn} do
       user1 = user_fixture(username: "alice_redirect")

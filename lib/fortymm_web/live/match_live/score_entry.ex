@@ -219,17 +219,20 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
 
       match_with_updated_game = update_game_in_match(match, game_with_score)
 
+      # Update match status based on game state
+      match_with_status = update_match_status(match_with_updated_game)
+
       # Update the match in storage
-      Matches.MatchStore.insert(match.id, match_with_updated_game)
+      Matches.MatchStore.insert(match.id, match_with_status)
 
       # Broadcast the match update to other players subscribed to this match
       Phoenix.PubSub.broadcast(
         Fortymm.PubSub,
         "match:#{match.id}",
-        {:match_updated, match_with_updated_game}
+        {:match_updated, match_with_status}
       )
 
-      handle_score_saved(socket, match_with_updated_game)
+      handle_score_saved(socket, match_with_status)
     else
       {:noreply, assign(socket, :form, to_form(Map.put(changeset, :action, :validate)))}
     end
@@ -467,5 +470,25 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
 
   defp generate_id do
     :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
+  end
+
+  defp update_match_status(match) do
+    case match.status do
+      "pending" ->
+        # First score entered, move to in_progress
+        %{match | status: "in_progress"}
+
+      "in_progress" ->
+        if match_winner_determined?(match) do
+          # Match is complete
+          %{match | status: "complete"}
+        else
+          match
+        end
+
+      status ->
+        # Keep existing status for canceled, aborted, complete
+        %{match | status: status}
+    end
   end
 end
