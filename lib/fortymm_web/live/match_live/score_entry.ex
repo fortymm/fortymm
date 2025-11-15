@@ -15,6 +15,11 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
       opponent_username =
         if opponent, do: Accounts.get_user!(opponent.user_id).username, else: "opponent"
 
+      # Subscribe to match updates so we're notified when the opponent enters a score
+      if connected?(socket) do
+        Phoenix.PubSub.subscribe(Fortymm.PubSub, "match:#{match_id}")
+      end
+
       {:ok,
        socket
        |> assign(:match, match)
@@ -164,6 +169,25 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
   end
 
   @impl true
+  def handle_info({:match_updated, updated_match}, socket) do
+    # When the opponent enters a score, check if we need to redirect
+    # If the match was updated (opponent entered score), re-fetch and potentially redirect
+    if match_updated?(socket.assigns.match, updated_match) do
+      # Reload the current game in case it was updated
+      current_game_id = socket.assigns.game.id
+      updated_game = Enum.find(updated_match.games, &(&1.id == current_game_id))
+
+      {:noreply,
+       socket
+       |> assign(:match, updated_match)
+       |> assign(:game, updated_game)
+       |> put_flash(:info, "Your opponent entered a score!")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_event("validate", %{"score_entry" => params}, socket) do
     params_with_proposer = add_proposer(params, socket)
 
@@ -198,33 +222,49 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
       # Update the match in storage
       Matches.MatchStore.insert(match.id, match_with_updated_game)
 
-      # Check if match is complete
-      if match_winner_determined?(match_with_updated_game) do
-        # Match is over, redirect to match details
-        {:noreply,
-         socket
-         |> put_flash(:info, "Score saved! Match complete!")
-         |> push_navigate(to: ~p"/matches/#{match.id}")}
-      else
-        # Create next game and redirect to score entry for it
-        case create_next_game(match_with_updated_game) do
-          {:ok, next_game, updated_match} ->
-            Matches.MatchStore.insert(match.id, updated_match)
+      # Broadcast the match update to other players subscribed to this match
+      Phoenix.PubSub.broadcast(
+        Fortymm.PubSub,
+        "match:#{match.id}",
+        {:match_updated, match_with_updated_game}
+      )
 
-            {:noreply,
-             socket
-             |> put_flash(:info, "Score saved! Starting next game...")
-             |> push_navigate(to: ~p"/matches/#{match.id}/games/#{next_game.id}/scores/new")}
-
-          {:error, _reason} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Failed to create next game")
-             |> push_navigate(to: ~p"/matches/#{match.id}")}
-        end
-      end
+      handle_score_saved(socket, match_with_updated_game)
     else
       {:noreply, assign(socket, :form, to_form(Map.put(changeset, :action, :validate)))}
+    end
+  end
+
+  defp handle_score_saved(socket, match_with_updated_game) do
+    if match_winner_determined?(match_with_updated_game) do
+      # Match is over, redirect to match details
+      {:noreply,
+       socket
+       |> put_flash(:info, "Score saved! Match complete!")
+       |> push_navigate(to: ~p"/matches/#{match_with_updated_game.id}")}
+    else
+      # Create next game and redirect to score entry for it
+      handle_next_game(socket, match_with_updated_game)
+    end
+  end
+
+  defp handle_next_game(socket, match_with_updated_game) do
+    case create_next_game(match_with_updated_game) do
+      {:ok, next_game, updated_match} ->
+        Matches.MatchStore.insert(match_with_updated_game.id, updated_match)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Score saved! Starting next game...")
+         |> push_navigate(
+           to: ~p"/matches/#{match_with_updated_game.id}/games/#{next_game.id}/scores/new"
+         )}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to create next game")
+         |> push_navigate(to: ~p"/matches/#{match_with_updated_game.id}")}
     end
   end
 
@@ -401,6 +441,11 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
     # For best-of-5: need 3 wins
     # Formula: (length_in_games // 2) + 1
     div(length_in_games, 2) + 1
+  end
+
+  defp match_updated?(old_match, new_match) do
+    # Check if the number of games changed (opponent entered a score)
+    Enum.count(old_match.games) != Enum.count(new_match.games)
   end
 
   defp create_next_game(match) do
