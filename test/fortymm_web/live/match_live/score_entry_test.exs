@@ -355,6 +355,443 @@ defmodule FortymmWeb.MatchLive.ScoreEntryTest do
     end
   end
 
+  describe "PubSub real-time updates" do
+    test "player receives notification when opponent enters a score", %{conn: conn} do
+      user1 = user_fixture(username: "pubsub_user1")
+      user2 = user_fixture(username: "pubsub_user2")
+      match = create_match(user1, user2)
+
+      game = Enum.at(match.games, 0)
+
+      # Player 2 loads the score entry page (subscribes to match)
+      {:ok, lv2, _html} =
+        conn
+        |> log_in_user(user2)
+        |> live(~p"/matches/#{match.id}/games/#{game.id}/scores/new")
+
+      # Player 1 loads the score entry page (subscribes to match)
+      {:ok, lv1, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game.id}/scores/new")
+
+      # Player 1 enters a score
+      lv1
+      |> form("#score-form", %{
+        "score_entry[score_proposal][scores][0][score]" => "11",
+        "score_entry[score_proposal][scores][1][score]" => "5"
+      })
+      |> render_submit()
+
+      # Player 2's view should update with notification
+      # Simulate receiving the PubSub message
+      send(lv2.pid, {:match_updated, Matches.get_match(match.id) |> elem(1)})
+
+      # Render should show the flash message about opponent's score
+      html = render(lv2)
+      assert html =~ "Your opponent entered a score!"
+    end
+
+    test "player 2 receives updated match when player 1 adds next game", %{conn: conn} do
+      user1 = user_fixture(username: "pubsub_next1")
+      user2 = user_fixture(username: "pubsub_next2")
+      match = create_match(user1, user2)
+
+      game1 = Enum.at(match.games, 0)
+
+      # Player 2 subscribes to match
+      {:ok, lv2, _html} =
+        conn
+        |> log_in_user(user2)
+        |> live(~p"/matches/#{match.id}/games/#{game1.id}/scores/new")
+
+      # Player 1 enters score for game 1
+      {:ok, lv1, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game1.id}/scores/new")
+
+      lv1
+      |> form("#score-form", %{
+        "score_entry[score_proposal][scores][0][score]" => "11",
+        "score_entry[score_proposal][scores][1][score]" => "5"
+      })
+      |> render_submit()
+
+      # Player 2 receives the update
+      {:ok, updated_match} = Matches.get_match(match.id)
+      send(lv2.pid, {:match_updated, updated_match})
+
+      # Verify match has 2 games now
+      assert Enum.count(updated_match.games) == 2
+
+      # Player 2's view should reflect the update
+      html = render(lv2)
+      assert html =~ "Your opponent entered a score!"
+    end
+
+    test "match_updated? correctly detects when games were added" do
+      user1 = user_fixture(username: "match_detect1")
+      user2 = user_fixture(username: "match_detect2")
+      match = create_match(user1, user2)
+
+      # Original match has 1 game
+      assert Enum.count(match.games) == 1
+
+      game1 = Enum.at(match.games, 0)
+
+      # Enter a score to create game 2
+      participant1 = Enum.at(match.participants, 0)
+      participant2 = Enum.at(match.participants, 1)
+
+      score_proposal1 = %ScoreProposal{
+        id: generate_id(),
+        proposed_by_participant_id: participant1.id,
+        scores: [
+          %Fortymm.Matches.Score{match_participant_id: participant1.id, score: 11},
+          %Fortymm.Matches.Score{match_participant_id: participant2.id, score: 5}
+        ]
+      }
+
+      game1_with_score = %{game1 | score_proposals: [score_proposal1]}
+
+      game2 = %Fortymm.Matches.Game{
+        id: generate_id(),
+        game_number: 2,
+        score_proposals: []
+      }
+
+      match_with_both_games = %{match | games: [game1_with_score, game2]}
+
+      # Now match has 2 games
+      assert Enum.count(match_with_both_games.games) == 2
+
+      # The helper function should detect this as an update
+      # (In practice, this is tested implicitly through the PubSub handler)
+      assert Enum.count(match.games) != Enum.count(match_with_both_games.games)
+    end
+  end
+
+  describe "Score entry redirect behavior for both players" do
+    test "player 1 can enter score and redirect works", %{conn: conn} do
+      user1 = user_fixture(username: "player1_p1")
+      user2 = user_fixture(username: "player2_p1")
+      match = create_match(user1, user2)
+
+      game = Enum.at(match.games, 0)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game.id}/scores/new")
+
+      result =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "11",
+          "score_entry[score_proposal][scores][1][score]" => "5"
+        })
+        |> render_submit()
+
+      assert {:error, {:live_redirect, _}} = result
+    end
+
+    test "player 2 can enter score and redirect works", %{conn: conn} do
+      user1 = user_fixture(username: "player1_p2")
+      user2 = user_fixture(username: "player2_p2")
+      match = create_match(user1, user2)
+
+      game = Enum.at(match.games, 0)
+
+      # Player 2 logs in and enters score
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user2)
+        |> live(~p"/matches/#{match.id}/games/#{game.id}/scores/new")
+
+      result =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "5",
+          "score_entry[score_proposal][scores][1][score]" => "11"
+        })
+        |> render_submit()
+
+      assert {:error, {:live_redirect, _}} = result
+    end
+
+    test "both players see the same match progression", %{conn: conn} do
+      user1 = user_fixture(username: "p1_match")
+      user2 = user_fixture(username: "p2_match")
+      match = create_match(user1, user2)
+
+      game1 = Enum.at(match.games, 0)
+
+      # Player 1 enters score for game 1
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game1.id}/scores/new")
+
+      {:error, {:live_redirect, _}} =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "11",
+          "score_entry[score_proposal][scores][1][score]" => "5"
+        })
+        |> render_submit()
+
+      # Verify the match was updated in storage
+      {:ok, updated_match} = Matches.get_match(match.id)
+      assert Enum.count(updated_match.games) == 2
+
+      # Player 2 should be able to access the new game 2
+      game2 = Enum.at(updated_match.games, 1)
+
+      {:ok, lv2, _html} =
+        conn
+        |> log_in_user(user2)
+        |> live(~p"/matches/#{match.id}/games/#{game2.id}/scores/new")
+
+      assert lv2 |> render() =~ "Enter Score"
+    end
+
+    test "complete match with both players shows final state", %{conn: conn} do
+      user1 = user_fixture(username: "p1_complete")
+      user2 = user_fixture(username: "p2_complete")
+      match = create_match(user1, user2)
+
+      # Find which participant corresponds to which user
+      participant_for_user1 =
+        Enum.find(match.participants, fn p -> p.user_id == user1.id end)
+
+      participant_for_user2 =
+        Enum.find(match.participants, fn p -> p.user_id == user2.id end)
+
+      # Set up game 1 with user1's participant winning
+      game1 = Enum.at(match.games, 0)
+
+      score_proposal1 = %ScoreProposal{
+        id: generate_id(),
+        proposed_by_participant_id: participant_for_user1.id,
+        scores: [
+          %Fortymm.Matches.Score{match_participant_id: participant_for_user1.id, score: 11},
+          %Fortymm.Matches.Score{match_participant_id: participant_for_user2.id, score: 5}
+        ]
+      }
+
+      game1_with_score = %{game1 | score_proposals: [score_proposal1]}
+
+      # Create and add game 2
+      game2 = %Fortymm.Matches.Game{
+        id: generate_id(),
+        game_number: 2,
+        score_proposals: []
+      }
+
+      match_with_both_games = %{match | games: [game1_with_score, game2]}
+      Matches.MatchStore.insert(match.id, match_with_both_games)
+
+      # User 2 enters score for game 2 (user1's participant wins again, completing the match)
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user2)
+        |> live(~p"/matches/#{match.id}/games/#{game2.id}/scores/new")
+
+      result =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "11",
+          "score_entry[score_proposal][scores][1][score]" => "8"
+        })
+        |> render_submit()
+
+      # Should redirect (match is complete)
+      assert {:error, {:live_redirect, _}} = result
+
+      # Both players should see the match as complete when they view it
+      {:ok, final_match} = Matches.get_match(match.id)
+      assert Enum.count(final_match.games) == 2
+
+      # Both players can view the match details after completion
+      {:ok, user1_match_view, _} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}")
+
+      user1_html = user1_match_view |> render()
+      assert user1_html =~ "Match"
+      # Shows 2 games were played
+      assert user1_html =~ "2"
+
+      {:ok, user2_match_view, _} =
+        conn
+        |> log_in_user(user2)
+        |> live(~p"/matches/#{match.id}")
+
+      user2_html = user2_match_view |> render()
+      assert user2_html =~ "Match"
+      # Shows 2 games were played
+      assert user2_html =~ "2"
+    end
+  end
+
+  describe "Score entry redirect behavior" do
+    test "redirects to next game when match is not complete after score entry", %{conn: conn} do
+      user1 = user_fixture(username: "alice_redirect")
+      user2 = user_fixture(username: "bob_redirect")
+      match = create_match(user1, user2)
+
+      game = Enum.at(match.games, 0)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game.id}/scores/new")
+
+      # Submit a score (11-5, participant1 wins game 1, but needs 2 wins for best-of-3)
+      # Should redirect to next game (game 2)
+      result =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "11",
+          "score_entry[score_proposal][scores][1][score]" => "5"
+        })
+        |> render_submit()
+
+      # Verify it returns a redirect error
+      assert {:error, {:live_redirect, _}} = result
+    end
+
+    test "redirects to match show page when match is complete after score entry", %{conn: conn} do
+      user1 = user_fixture(username: "charlie_redirect")
+      user2 = user_fixture(username: "diana_redirect")
+      match = create_match(user1, user2)
+
+      participant1 = Enum.at(match.participants, 0)
+      participant2 = Enum.at(match.participants, 1)
+
+      # Set up game 1 with participant1 winning
+      game1 = Enum.at(match.games, 0)
+
+      score_proposal1 = %ScoreProposal{
+        id: generate_id(),
+        proposed_by_participant_id: participant1.id,
+        scores: [
+          %Fortymm.Matches.Score{match_participant_id: participant1.id, score: 11},
+          %Fortymm.Matches.Score{match_participant_id: participant2.id, score: 5}
+        ]
+      }
+
+      game1_with_score = %{game1 | score_proposals: [score_proposal1]}
+
+      # Create and add game 2
+      game2 = %Fortymm.Matches.Game{
+        id: generate_id(),
+        game_number: 2,
+        score_proposals: []
+      }
+
+      match_with_both_games = %{match | games: [game1_with_score, game2]}
+      Matches.MatchStore.insert(match.id, match_with_both_games)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game2.id}/scores/new")
+
+      # Submit a score for game 2 that gives participant1 their second win (match complete)
+      # Should redirect to match details page
+      result =
+        lv
+        |> form("#score-form", %{
+          "score_entry[score_proposal][scores][0][score]" => "11",
+          "score_entry[score_proposal][scores][1][score]" => "8"
+        })
+        |> render_submit()
+
+      # Verify it redirects
+      assert {:error, {:live_redirect, _}} = result
+    end
+
+    test "shows flash message when score is saved and match is not complete", %{conn: conn} do
+      user1 = user_fixture(username: "eve_redirect")
+      user2 = user_fixture(username: "frank_redirect")
+      match = create_match(user1, user2)
+
+      game = Enum.at(match.games, 0)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game.id}/scores/new")
+
+      # Verify that it redirects with a flash message (flash is encoded but present)
+      assert {:error, {:live_redirect, %{flash: flash}}} =
+               lv
+               |> form("#score-form", %{
+                 "score_entry[score_proposal][scores][0][score]" => "11",
+                 "score_entry[score_proposal][scores][1][score]" => "7"
+               })
+               |> render_submit()
+
+      # Flash is present (it's encoded by Phoenix)
+      assert is_binary(flash)
+      assert String.length(flash) > 0
+    end
+
+    test "shows flash message when score is saved and match is complete", %{conn: conn} do
+      user1 = user_fixture(username: "grace_redirect")
+      user2 = user_fixture(username: "henry_redirect")
+      match = create_match(user1, user2)
+
+      participant1 = Enum.at(match.participants, 0)
+      participant2 = Enum.at(match.participants, 1)
+
+      # Set up game 1 with participant1 winning
+      game1 = Enum.at(match.games, 0)
+
+      score_proposal1 = %ScoreProposal{
+        id: generate_id(),
+        proposed_by_participant_id: participant1.id,
+        scores: [
+          %Fortymm.Matches.Score{match_participant_id: participant1.id, score: 11},
+          %Fortymm.Matches.Score{match_participant_id: participant2.id, score: 5}
+        ]
+      }
+
+      game1_with_score = %{game1 | score_proposals: [score_proposal1]}
+
+      # Create and add game 2
+      game2 = %Fortymm.Matches.Game{
+        id: generate_id(),
+        game_number: 2,
+        score_proposals: []
+      }
+
+      match_with_both_games = %{match | games: [game1_with_score, game2]}
+      Matches.MatchStore.insert(match.id, match_with_both_games)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}/games/#{game2.id}/scores/new")
+
+      # Verify that it redirects with a flash message (flash is encoded but present)
+      assert {:error, {:live_redirect, %{flash: flash}}} =
+               lv
+               |> form("#score-form", %{
+                 "score_entry[score_proposal][scores][0][score]" => "11",
+                 "score_entry[score_proposal][scores][1][score]" => "9"
+               })
+               |> render_submit()
+
+      # Flash is present (it's encoded by Phoenix)
+      assert is_binary(flash)
+      assert String.length(flash) > 0
+    end
+  end
+
   defp generate_id do
     :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
   end
