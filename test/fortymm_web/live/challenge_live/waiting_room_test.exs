@@ -1,5 +1,5 @@
 defmodule FortymmWeb.ChallengeLive.WaitingRoomTest do
-  use FortymmWeb.ConnCase, async: true
+  use FortymmWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Fortymm.AccountsFixtures

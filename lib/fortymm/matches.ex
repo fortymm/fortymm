@@ -383,6 +383,68 @@ defmodule Fortymm.Matches do
     Enum.sort_by(matches, & &1.id, :asc)
   end
 
+  @doc """
+  Gets matches that need scoring for a given user.
+
+  Returns matches where:
+  - The user is a participant
+  - The match is not complete, canceled, or aborted
+  - There's a current game that needs the user's score
+
+  ## Examples
+
+      iex> get_matches_needing_scoring(1)
+      [%Match{id: "...", status: "in_progress", ...}]
+
+  """
+  def get_matches_needing_scoring(user_id) do
+    MatchStore.list_all()
+    |> Enum.filter(fn match ->
+      user_is_participant?(match, user_id) &&
+        match_is_active?(match) &&
+        has_game_needing_score?(match, user_id)
+    end)
+  end
+
+  defp user_is_participant?(match, user_id) do
+    Enum.any?(match.participants, fn participant ->
+      participant.user_id == user_id
+    end)
+  end
+
+  defp match_is_active?(match) do
+    match.status in ["pending", "in_progress"]
+  end
+
+  defp has_game_needing_score?(match, user_id) do
+    # Find the participant for this user
+    participant =
+      Enum.find(match.participants, fn p ->
+        p.user_id == user_id
+      end)
+
+    if participant do
+      # Check if there's a current game without the user's score
+      current_game = List.last(match.games)
+
+      if current_game do
+        user_has_not_scored?(current_game, participant.id)
+      else
+        # No games yet, match needs first game score
+        true
+      end
+    else
+      false
+    end
+  end
+
+  defp user_has_not_scored?(game, participant_id) do
+    # Check if user has already submitted a score proposal for this game
+    not Enum.any?(game.score_proposals, fn proposal ->
+      proposal.proposed_by_participant_id == participant_id
+    end)
+  end
+
   defp generate_id do
     :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
   end

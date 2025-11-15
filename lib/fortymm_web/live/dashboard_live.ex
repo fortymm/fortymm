@@ -9,6 +9,31 @@ defmodule FortymmWeb.DashboardLive do
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="max-w-4xl mx-auto">
         <div class="grid gap-6">
+          <%!-- Match Scoring Alert --%>
+          <%= for match <- @matches_needing_scoring do %>
+            <div
+              role="alert"
+              class="flex gap-3 alert alert-info alert-soft"
+            >
+              <.icon name="hero-pencil-square" />
+              <span class="flex-1">
+                <%= if match.games != [] do %>
+                  <% current_game = List.last(match.games) %> Game {current_game.game_number} is ready for scoring.
+                <% else %>
+                  Your match is ready! Game 1 needs scoring.
+                <% end %>
+              </span>
+              <div>
+                <.link
+                  navigate={get_score_entry_path(match)}
+                  class="btn btn-sm btn-primary"
+                >
+                  Enter Score
+                </.link>
+              </div>
+            </div>
+          <% end %>
+
           <%!-- Challenge a Friend Card --%>
           <div class="card border bg-primary/30 border-primary/30">
             <div class="card-body">
@@ -182,11 +207,14 @@ defmodule FortymmWeb.DashboardLive do
   @impl true
   def mount(_params, _session, socket) do
     form = Matches.challenge_changeset() |> to_form()
+    current_user_id = socket.assigns.current_scope.user.id
+    matches_needing_scoring = Matches.get_matches_needing_scoring(current_user_id)
 
     socket =
       socket
       |> assign(:active_nav, :dashboard)
       |> assign(:form, form)
+      |> assign(:matches_needing_scoring, matches_needing_scoring)
 
     {:ok, socket}
   end
@@ -205,6 +233,18 @@ defmodule FortymmWeb.DashboardLive do
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
+    end
+  end
+
+  defp get_score_entry_path(match) do
+    # Get the current game (the last game in the list)
+    current_game = List.last(match.games)
+
+    if current_game do
+      ~p"/matches/#{match.id}/games/#{current_game.id}/scores/new"
+    else
+      # Fallback to match page if no game exists (shouldn't happen)
+      ~p"/matches/#{match.id}"
     end
   end
 end

@@ -1,8 +1,11 @@
 defmodule FortymmWeb.DashboardLiveTest do
-  use FortymmWeb.ConnCase, async: true
+  use FortymmWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Fortymm.AccountsFixtures
+  import Fortymm.MatchesFixtures
+
+  alias Fortymm.Matches.{Game, Participant, ScoreProposal, Score}
 
   describe "Dashboard page" do
     test "renders dashboard page for logged-in user", %{conn: conn} do
@@ -263,6 +266,321 @@ defmodule FortymmWeb.DashboardLiveTest do
 
       # Should have X button in dialog
       assert has_element?(lv, "#challenge_modal form[method='dialog'] button")
+    end
+  end
+
+  describe "Match scoring alerts" do
+    test "does not show alert when user has no matches", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      refute html =~ "ready for scoring"
+    end
+
+    test "shows alert for pending match with first game needing score", %{conn: conn} do
+      user = user_fixture()
+      game = %Game{id: "game1", game_number: 1, score_proposals: []}
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      pending_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game]
+      })
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      assert html =~ "Game 1 is ready for scoring"
+      assert has_element?(lv, "div[role='alert']")
+      assert has_element?(lv, "a", "Enter Score")
+    end
+
+    test "shows alert for in-progress match when user hasn't scored", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game1", game_number: 2, score_proposals: []}
+
+      in_progress_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game]
+      })
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      assert html =~ "Game 2 is ready for scoring"
+    end
+
+    test "does not show alert when user has already scored", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      # User has already submitted a score proposal
+      score_proposal = %ScoreProposal{
+        proposed_by_participant_id: participant1.id,
+        scores: [
+          %Score{match_participant_id: "p1", score: 11},
+          %Score{match_participant_id: "p2", score: 9}
+        ]
+      }
+
+      game = %Game{id: "game1", game_number: 1, score_proposals: [score_proposal]}
+
+      in_progress_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game]
+      })
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      refute html =~ "ready for scoring"
+    end
+
+    test "does not show alert for complete matches", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game1", game_number: 1, score_proposals: []}
+
+      complete_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game]
+      })
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      refute html =~ "ready for scoring"
+    end
+
+    test "does not show alert for canceled matches", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game1", game_number: 1, score_proposals: []}
+
+      canceled_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game]
+      })
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      refute html =~ "ready for scoring"
+    end
+
+    test "alert contains link to score entry page", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game123", game_number: 1, score_proposals: []}
+
+      match =
+        pending_match_fixture(%{
+          participants: [participant1, participant2],
+          games: [game]
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      # Check that the link points to the correct score entry page
+      assert has_element?(
+               lv,
+               "a[href='/matches/#{match.id}/games/game123/scores/new']",
+               "Enter Score"
+             )
+    end
+
+    test "shows multiple alerts for multiple matches needing scoring", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game1 = %Game{id: "game1", game_number: 1, score_proposals: []}
+      game2 = %Game{id: "game2", game_number: 3, score_proposals: []}
+
+      # Create two matches that need scoring
+      pending_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game1]
+      })
+
+      in_progress_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game2]
+      })
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      assert html =~ "Game 1 is ready for scoring"
+      assert html =~ "Game 3 is ready for scoring"
+
+      # Should have alert elements with role="alert"
+      assert has_element?(lv, "div[role='alert']")
+
+      # Both links should be present
+      assert has_element?(lv, "a", "Enter Score")
+    end
+
+    test "does not show alert for matches where user is not a participant", %{conn: conn} do
+      user = user_fixture()
+      other_user_id = user.id + 100
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: other_user_id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: other_user_id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game1", game_number: 1, score_proposals: []}
+
+      pending_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game]
+      })
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      refute html =~ "ready for scoring"
+    end
+
+    test "alert has proper accessibility attributes", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game1", game_number: 1, score_proposals: []}
+
+      pending_match_fixture(%{
+        participants: [participant1, participant2],
+        games: [game]
+      })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      # Alert should have role="alert" attribute
+      assert has_element?(lv, "div[role='alert']")
     end
   end
 end

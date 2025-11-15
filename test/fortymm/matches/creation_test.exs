@@ -1,5 +1,5 @@
 defmodule Fortymm.Matches.CreationTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Fortymm.Matches.{Challenge, Configuration, Creation, Game, Match, MatchStore}
 

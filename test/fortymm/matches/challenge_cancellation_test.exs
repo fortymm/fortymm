@@ -1,5 +1,5 @@
 defmodule Fortymm.Matches.ChallengeCancellationTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Fortymm.Matches.{Challenge, ChallengeCancellation, Configuration}
 

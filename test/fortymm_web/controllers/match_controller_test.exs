@@ -1,5 +1,5 @@
 defmodule FortymmWeb.MatchControllerTest do
-  use FortymmWeb.ConnCase, async: true
+  use FortymmWeb.ConnCase, async: false
 
   import Fortymm.AccountsFixtures
   import Fortymm.MatchesFixtures
