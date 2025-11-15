@@ -384,6 +384,26 @@ defmodule Fortymm.Matches do
   end
 
   @doc """
+  Gets all active matches for a given user.
+
+  Returns matches where:
+  - The user is a participant
+  - The match is not complete, canceled, or aborted
+
+  ## Examples
+
+      iex> get_active_matches_for_user(1)
+      [%Match{id: "...", status: "in_progress", ...}]
+
+  """
+  def get_active_matches_for_user(user_id) do
+    MatchStore.list_all()
+    |> Enum.filter(fn match ->
+      user_is_participant?(match, user_id) && match_is_active?(match)
+    end)
+  end
+
+  @doc """
   Gets matches that need scoring for a given user.
 
   Returns matches where:

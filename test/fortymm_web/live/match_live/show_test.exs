@@ -232,4 +232,183 @@ defmodule FortymmWeb.MatchLive.ShowTest do
                live(conn, ~p"/matches/some-id")
     end
   end
+
+  describe "Real-time updates" do
+    test "subscribes to match updates on mount", %{conn: conn} do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      match = create_match(user1, user2)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}")
+
+      # Verify subscription by broadcasting and checking the view updates
+      updated_match = %{match | status: "in_progress"}
+      Matches.MatchStore.insert(match.id, updated_match)
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # The LiveView should update
+      assert render(lv) =~ "In_progress"
+    end
+
+    test "updates match details when match update is broadcast", %{conn: conn} do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      match = create_match(user1, user2)
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}")
+
+      # Initially status should be pending
+      assert html =~ "Pending"
+
+      # Update the match status to in_progress
+      updated_match = %{match | status: "in_progress"}
+      Matches.MatchStore.insert(match.id, updated_match)
+
+      # Broadcast the update
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # The LiveView should update to show the new status
+      assert render(lv) =~ "In_progress"
+    end
+
+    test "updates participant stats when games are added", %{conn: conn} do
+      user1 = user_fixture(username: "alice")
+      user2 = user_fixture(username: "bob")
+      match = create_match(user1, user2)
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}")
+
+      # Initially no games won
+      assert html =~ "games won"
+
+      # Add a game with scores
+      participant1 = Enum.at(match.participants, 0)
+      participant2 = Enum.at(match.participants, 1)
+
+      game = %Fortymm.Matches.Game{
+        id: "game1",
+        game_number: 1,
+        score_proposals: [
+          %Fortymm.Matches.ScoreProposal{
+            proposed_by_participant_id: participant1.id,
+            scores: [
+              %Fortymm.Matches.Score{match_participant_id: participant1.id, score: 11},
+              %Fortymm.Matches.Score{match_participant_id: participant2.id, score: 9}
+            ]
+          }
+        ]
+      }
+
+      updated_match = %{match | games: [game], status: "in_progress"}
+      Matches.MatchStore.insert(match.id, updated_match)
+
+      # Broadcast the update
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # The LiveView should show the updated game count
+      rendered = render(lv)
+      assert rendered =~ "Game 1"
+    end
+
+    test "shows completed games with scores in real-time", %{conn: conn} do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      match = create_match(user1, user2)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}")
+
+      participant1 = Enum.at(match.participants, 0)
+      participant2 = Enum.at(match.participants, 1)
+
+      # Add a completed game
+      game = %Fortymm.Matches.Game{
+        id: "game1",
+        game_number: 1,
+        score_proposals: [
+          %Fortymm.Matches.ScoreProposal{
+            proposed_by_participant_id: participant1.id,
+            scores: [
+              %Fortymm.Matches.Score{match_participant_id: participant1.id, score: 11},
+              %Fortymm.Matches.Score{match_participant_id: participant2.id, score: 5}
+            ]
+          }
+        ]
+      }
+
+      updated_match = %{match | games: [game], status: "in_progress"}
+      Matches.MatchStore.insert(match.id, updated_match)
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # Should show the game with scores
+      rendered = render(lv)
+      assert rendered =~ "Game 1"
+      assert rendered =~ "11"
+      assert rendered =~ "5"
+    end
+
+    test "updates match progress bar in real-time", %{conn: conn} do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      match = create_match(user1, user2)
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}")
+
+      # Initially 1 of 3 games (the initial game)
+      assert html =~ "1 of 3 games"
+
+      # Add another game
+      game1 = Enum.at(match.games, 0)
+
+      game2 = %Fortymm.Matches.Game{
+        id: "game2",
+        game_number: 2,
+        score_proposals: []
+      }
+
+      updated_match = %{match | games: [game1, game2]}
+      Matches.MatchStore.insert(match.id, updated_match)
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # Should show updated progress
+      rendered = render(lv)
+      assert rendered =~ "2 of 3 games"
+    end
+
+    test "shows match completion status in real-time", %{conn: conn} do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      match = create_match(user1, user2)
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user1)
+        |> live(~p"/matches/#{match.id}")
+
+      assert html =~ "Pending"
+
+      # Update match to complete
+      updated_match = %{match | status: "complete"}
+      Matches.MatchStore.insert(match.id, updated_match)
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # Should show complete status
+      rendered = render(lv)
+      assert rendered =~ "Complete"
+    end
+  end
 end

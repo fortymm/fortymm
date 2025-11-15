@@ -2,6 +2,7 @@ defmodule FortymmWeb.DashboardLive do
   use FortymmWeb, :live_view
 
   alias Fortymm.Matches
+  alias Fortymm.Matches.MatchUpdates
 
   @impl true
   def render(assigns) do
@@ -210,6 +211,15 @@ defmodule FortymmWeb.DashboardLive do
     current_user_id = socket.assigns.current_scope.user.id
     matches_needing_scoring = Matches.get_matches_needing_scoring(current_user_id)
 
+    # Subscribe to all active matches for real-time updates
+    if connected?(socket) do
+      active_matches = Matches.get_active_matches_for_user(current_user_id)
+
+      Enum.each(active_matches, fn match ->
+        MatchUpdates.subscribe(match.id)
+      end)
+    end
+
     socket =
       socket
       |> assign(:active_nav, :dashboard)
@@ -217,6 +227,20 @@ defmodule FortymmWeb.DashboardLive do
       |> assign(:matches_needing_scoring, matches_needing_scoring)
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_info({:match_updated, updated_match}, socket) do
+    # When a match updates, re-fetch matches needing scoring
+    current_user_id = socket.assigns.current_scope.user.id
+    matches_needing_scoring = Matches.get_matches_needing_scoring(current_user_id)
+
+    # If this is a newly active match, subscribe to it
+    if updated_match.status in ["pending", "in_progress"] do
+      MatchUpdates.subscribe(updated_match.id)
+    end
+
+    {:noreply, assign(socket, :matches_needing_scoring, matches_needing_scoring)}
   end
 
   @impl true

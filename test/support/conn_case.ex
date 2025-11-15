@@ -35,12 +35,12 @@ defmodule FortymmWeb.ConnCase do
     Fortymm.DataCase.setup_sandbox(tags)
 
     # Clear ETS stores before each test to avoid test interference
-    if :ets.whereis(:match_store) != :undefined do
-      :ets.delete_all_objects(:match_store)
+    if :ets.whereis(:matches) != :undefined do
+      :ets.delete_all_objects(:matches)
     end
 
-    if :ets.whereis(:challenge_store) != :undefined do
-      :ets.delete_all_objects(:challenge_store)
+    if :ets.whereis(:challenges) != :undefined do
+      :ets.delete_all_objects(:challenges)
     end
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}

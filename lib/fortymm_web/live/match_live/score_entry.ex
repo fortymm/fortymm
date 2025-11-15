@@ -3,6 +3,7 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
 
   alias Fortymm.Accounts
   alias Fortymm.Matches
+  alias Fortymm.Matches.MatchUpdates
   alias Fortymm.Matches.ScoreEntry
 
   @impl true
@@ -17,7 +18,7 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
 
       # Subscribe to match updates so we're notified when the opponent enters a score
       if connected?(socket) do
-        Phoenix.PubSub.subscribe(Fortymm.PubSub, "match:#{match_id}")
+        MatchUpdates.subscribe(match_id)
       end
 
       {:ok,
@@ -226,11 +227,7 @@ defmodule FortymmWeb.MatchLive.ScoreEntry do
       Matches.MatchStore.insert(match.id, match_with_status)
 
       # Broadcast the match update to other players subscribed to this match
-      Phoenix.PubSub.broadcast(
-        Fortymm.PubSub,
-        "match:#{match.id}",
-        {:match_updated, match_with_status}
-      )
+      MatchUpdates.broadcast(match_with_status)
 
       handle_score_saved(socket, match_with_status)
     else
