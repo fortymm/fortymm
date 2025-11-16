@@ -1,11 +1,17 @@
 defmodule FortymmWeb.MatchLive.Show do
   use FortymmWeb, :live_view
   alias Fortymm.{Matches, Accounts}
+  alias Fortymm.Matches.MatchUpdates
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     case Matches.get_match(id) do
       {:ok, match} ->
+        # Subscribe to match updates for real-time changes
+        if connected?(socket) do
+          MatchUpdates.subscribe(id)
+        end
+
         socket =
           socket
           |> assign(:match_id, id)
@@ -23,6 +29,17 @@ defmodule FortymmWeb.MatchLive.Show do
          |> assign(:page_title, "Match Details")
          |> put_flash(:error, "Match not found")}
     end
+  end
+
+  @impl true
+  def handle_info({:match_updated, updated_match}, socket) do
+    # Refresh the match details with the updated data
+    socket =
+      socket
+      |> assign(:match, updated_match)
+      |> load_participants()
+
+    {:noreply, socket}
   end
 
   defp load_participants(socket) do

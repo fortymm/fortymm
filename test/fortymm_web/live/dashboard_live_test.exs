@@ -583,4 +583,257 @@ defmodule FortymmWeb.DashboardLiveTest do
       assert has_element?(lv, "div[role='alert']")
     end
   end
+
+  describe "Real-time match alert updates" do
+    test "subscribes to user's active matches on mount", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game1", game_number: 1, score_proposals: []}
+
+      match =
+        pending_match_fixture(%{
+          participants: [participant1, participant2],
+          games: [game]
+        })
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      # Verify subscription by checking initial alert shows
+      assert html =~ "ready for scoring"
+
+      # Then verify it updates when match changes
+      updated_match = %{match | status: "complete"}
+      Fortymm.Matches.MatchStore.insert(match.id, updated_match)
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # Alert should disappear
+      refute render(lv) =~ "ready for scoring"
+    end
+
+    test "shows new alert when match needs scoring in real-time", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      # Start with a match where user has already scored
+      score_proposal = %ScoreProposal{
+        proposed_by_participant_id: participant1.id,
+        scores: [
+          %Score{match_participant_id: "p1", score: 11},
+          %Score{match_participant_id: "p2", score: 9}
+        ]
+      }
+
+      game1 = %Game{id: "game1", game_number: 1, score_proposals: [score_proposal]}
+
+      match =
+        in_progress_match_fixture(%{
+          participants: [participant1, participant2],
+          games: [game1]
+        })
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      # Initially no alert because user already scored
+      refute html =~ "ready for scoring"
+
+      # Add a new game that needs scoring
+      game2 = %Game{id: "game2", game_number: 2, score_proposals: []}
+      updated_match = %{match | games: [game1, game2]}
+      Fortymm.Matches.MatchStore.insert(match.id, updated_match)
+
+      # Broadcast the update
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # Alert should now appear
+      assert render(lv) =~ "ready for scoring"
+    end
+
+    test "removes alert when user scores in real-time", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game1", game_number: 1, score_proposals: []}
+
+      match =
+        pending_match_fixture(%{
+          participants: [participant1, participant2],
+          games: [game]
+        })
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      # Initially alert should show
+      assert html =~ "ready for scoring"
+
+      # User enters a score
+      score_proposal = %ScoreProposal{
+        proposed_by_participant_id: participant1.id,
+        scores: [
+          %Score{match_participant_id: "p1", score: 11},
+          %Score{match_participant_id: "p2", score: 9}
+        ]
+      }
+
+      updated_game = %{game | score_proposals: [score_proposal]}
+      updated_match = %{match | games: [updated_game], status: "in_progress"}
+      Fortymm.Matches.MatchStore.insert(match.id, updated_match)
+
+      # Broadcast the update
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # Alert should disappear
+      refute render(lv) =~ "ready for scoring"
+    end
+
+    test "removes alert when match completes in real-time", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      game = %Game{id: "game1", game_number: 1, score_proposals: []}
+
+      match =
+        pending_match_fixture(%{
+          participants: [participant1, participant2],
+          games: [game]
+        })
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      # Initially alert should show
+      assert html =~ "ready for scoring"
+
+      # Match completes
+      updated_match = %{match | status: "complete"}
+      Fortymm.Matches.MatchStore.insert(match.id, updated_match)
+
+      # Broadcast the update
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match)
+
+      # Alert should disappear
+      refute render(lv) =~ "ready for scoring"
+    end
+
+    test "handles multiple match updates correctly", %{conn: conn} do
+      user = user_fixture()
+
+      participant1 = %Participant{
+        id: "p1",
+        user_id: user.id,
+        participant_number: 1
+      }
+
+      participant2 = %Participant{
+        id: "p2",
+        user_id: user.id + 1,
+        participant_number: 2
+      }
+
+      # Create two matches
+      game1 = %Game{id: "game1", game_number: 1, score_proposals: []}
+      game2 = %Game{id: "game2", game_number: 1, score_proposals: []}
+
+      match1 =
+        pending_match_fixture(%{
+          participants: [participant1, participant2],
+          games: [game1]
+        })
+
+      match2 =
+        pending_match_fixture(%{
+          participants: [participant1, participant2],
+          games: [game2]
+        })
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/dashboard")
+
+      # Both matches should show alerts
+      assert html =~ "ready for scoring"
+
+      # User scores in match1
+      score_proposal = %ScoreProposal{
+        proposed_by_participant_id: participant1.id,
+        scores: [
+          %Score{match_participant_id: "p1", score: 11},
+          %Score{match_participant_id: "p2", score: 9}
+        ]
+      }
+
+      updated_game1 = %{game1 | score_proposals: [score_proposal]}
+      updated_match1 = %{match1 | games: [updated_game1], status: "in_progress"}
+      Fortymm.Matches.MatchStore.insert(match1.id, updated_match1)
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match1)
+
+      # Should still show alert for match2
+      assert render(lv) =~ "ready for scoring"
+
+      # User scores in match2
+      updated_game2 = %{game2 | score_proposals: [score_proposal]}
+      updated_match2 = %{match2 | games: [updated_game2], status: "in_progress"}
+      Fortymm.Matches.MatchStore.insert(match2.id, updated_match2)
+      Fortymm.Matches.MatchUpdates.broadcast(updated_match2)
+
+      # No alerts should remain
+      refute render(lv) =~ "ready for scoring"
+    end
+  end
 end
