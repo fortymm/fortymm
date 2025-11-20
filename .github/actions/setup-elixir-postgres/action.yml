@@ -1,0 +1,58 @@
+name: 'Setup Elixir and Dependencies'
+description: 'Sets up Elixir, caches dependencies, installs/compiles them, and initializes the database'
+
+inputs:
+  elixir-version:
+    description: 'Elixir version to use'
+    required: false
+    default: '1.19.1'
+  otp-version:
+    description: 'OTP version to use'
+    required: false
+    default: '28'
+  mix-env:
+    description: 'MIX_ENV to use'
+    required: false
+    default: 'test'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ inputs.elixir-version }}
+        otp-version: ${{ inputs.otp-version }}
+
+    - name: Restore dependencies cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+
+    - name: Install dependencies
+      shell: bash
+      run: mix deps.get
+      env:
+        MIX_ENV: ${{ inputs.mix-env }}
+
+    - name: Compile dependencies
+      shell: bash
+      run: mix deps.compile
+      env:
+        MIX_ENV: ${{ inputs.mix-env }}
+
+    - name: Create database
+      shell: bash
+      run: mix ecto.create
+      env:
+        MIX_ENV: ${{ inputs.mix-env }}
+
+    - name: Migrate database
+      shell: bash
+      run: mix ecto.migrate
+      env:
+        MIX_ENV: ${{ inputs.mix-env }}
