@@ -57,61 +57,66 @@
         </.link>
       </div>
       <div class="flex-none">
-        <ul class="menu menu-horizontal px-1">
-          <%= if @current_scope do %>
-            <li>
-              <div
-                phx-click={toggle_user_menu("#user-menu")}
-                class="cursor-pointer flex items-center gap-2"
-              >
-                <FortymmWeb.Components.Gravatar.avatar
-                  email={@current_scope.user.email}
-                  size={32}
-                  class="w-5 h-5 rounded-full"
-                  alt={@current_scope.user.username}
-                />
-                <span class="hidden lg:inline-flex lg:items-center lg:gap-2">
-                  {@current_scope.user.username}
-                  <.icon name="hero-chevron-down" class="size-3 opacity-70" />
-                </span>
-              </div>
-              <ul
-                id="user-menu"
-                phx-click-away={hide_user_menu("#user-menu")}
-                class="hidden menu dropdown-content bg-base-200 rounded-box w-56 z-[1] p-2 shadow-lg absolute right-0 top-8"
-              >
-                <li>
-                  <.link
-                    href={~p"/users/settings"}
-                    class={[assigns[:active_nav] == :settings && "menu-active"]}
-                  >
-                    <.icon name="hero-user-circle" class="size-5" /> Account Settings
-                  </.link>
-                </li>
-                <li>
-                  <.link
-                    href={~p"/settings/appearance"}
-                    class={[assigns[:active_nav] == :appearance && "menu-active"]}
-                  >
-                    <.icon name="hero-paint-brush" class="size-5" /> Appearance
-                  </.link>
-                </li>
-                <li>
-                  <.link href={~p"/users/log-out"} method="delete" class="text-error">
-                    <.icon name="hero-arrow-left-on-rectangle" class="size-5" /> Sign Out
-                  </.link>
-                </li>
-              </ul>
-            </li>
-          <% else %>
-            <li>
-              <.link href={~p"/users/register"}>Register</.link>
-            </li>
-            <li>
-              <.link href={~p"/users/log-in"}>Log in</.link>
-            </li>
-          <% end %>
-        </ul>
+        <nav aria-label="User navigation">
+          <ul class="menu menu-horizontal px-1">
+            <%= if @current_scope do %>
+              <li>
+                <button
+                  type="button"
+                  phx-click={toggle_user_menu("#user-menu")}
+                  class="cursor-pointer flex items-center gap-2"
+                  aria-label="Toggle user menu"
+                  aria-haspopup="true"
+                >
+                  <FortymmWeb.Components.Gravatar.avatar
+                    email={@current_scope.user.email}
+                    size={32}
+                    class="w-5 h-5 rounded-full"
+                    alt={@current_scope.user.username}
+                  />
+                  <span class="hidden lg:inline-flex lg:items-center lg:gap-2">
+                    {@current_scope.user.username}
+                    <.icon name="hero-chevron-down" class="size-3 opacity-70" />
+                  </span>
+                </button>
+                <ul
+                  id="user-menu"
+                  phx-click-away={hide_user_menu("#user-menu")}
+                  class="hidden menu dropdown-content bg-base-200 rounded-box w-56 z-[1] p-2 shadow-lg absolute right-0 top-8"
+                >
+                  <li>
+                    <.link
+                      href={~p"/users/settings"}
+                      class={[assigns[:active_nav] == :settings && "menu-active"]}
+                    >
+                      <.icon name="hero-user-circle" class="size-5" /> Account Settings
+                    </.link>
+                  </li>
+                  <li>
+                    <.link
+                      href={~p"/settings/appearance"}
+                      class={[assigns[:active_nav] == :appearance && "menu-active"]}
+                    >
+                      <.icon name="hero-paint-brush" class="size-5" /> Appearance
+                    </.link>
+                  </li>
+                  <li>
+                    <.link href={~p"/users/log-out"} method="delete" class="text-error">
+                      <.icon name="hero-arrow-left-on-rectangle" class="size-5" /> Sign Out
+                    </.link>
+                  </li>
+                </ul>
+              </li>
+            <% else %>
+              <li>
+                <.link href={~p"/users/register"}>Register</.link>
+              </li>
+              <li>
+                <.link href={~p"/users/log-in"}>Log in</.link>
+              </li>
+            <% end %>
+          </ul>
+        </nav>
       </div>
     </div>
 
