@@ -4,7 +4,7 @@ import Config
 config :fortymm, Fortymm.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "db",
+  hostname: System.get_env("DATABASE_HOST", "db"),
   database: "fortymm_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
